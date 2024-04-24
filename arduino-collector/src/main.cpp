@@ -4,7 +4,7 @@
 
 void setup() {
   Serial.begin(9600);  // Serial port to computer
-  Serial1.begin(9600); // Serial port to HC12
+  Serial1.begin(9600); // Serial port to HC1
 }
 
 static radio::Connection conn;

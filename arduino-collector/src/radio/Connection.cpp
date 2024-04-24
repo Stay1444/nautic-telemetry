@@ -3,7 +3,7 @@
 #include <HardwareSerial.h>
 
 #include "Connection.h"
-#include "PacketVerifier.h"
+#include "PacketDeserializer.h"
 #include "Protocol.h"
 
 using namespace radio;
@@ -30,24 +30,20 @@ void Connection::tick() {
   }
 
   for (size_t i = 0; i < this->bufferLength; i++) {
-    if (this->buffer[i] != PACKET_START_BYTE) {
+    if (this->buffer[i] != PACKET_HEAD_BYTE) {
       continue;
     }
 
-    size_t end = 0;
-    auto result = radio::PacketVerifier::verify(&this->buffer[i],
-                                                this->bufferLength - i, &end);
+    auto result = PacketDeserializer::deserialize(&this->buffer[i],
+                                                  this->bufferLength - i);
 
-    if (result == radio::PacketVerifier::Result::Ok) {
-      size_t packetSize = end - i;
-      uint8_t *packet = (uint8_t *)malloc(packetSize);
-      utils::arrays::copy(&this->buffer[i], packet, packetSize);
+    if (result.status == PacketDeserializer::PacketStatus::Ok) {
+      uint8_t *packet = (uint8_t *)malloc(result.dataLength);
+      utils::arrays::copy(result.dataStart, packet, result.dataLength);
 
-      this->logger.info("received packet with length %d", packetSize);
-    } else if (result == radio::PacketVerifier::Result::Corrupted) {
-      this->bufferLength = 0;
-      this->logger.warn("Packet buffer contains corrupted data. Resetting");
-      break;
+      this->logger.info("received packet with length %d", result.dataLength);
+    } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
+      // TODO: Handle other cases too
     }
   }
 }
