@@ -41,9 +41,23 @@ void Connection::tick() {
       uint8_t *packet = (uint8_t *)malloc(result.dataLength);
       utils::arrays::copy(result.dataStart, packet, result.dataLength);
 
-      this->logger.info("received packet with length %d", result.dataLength);
+      this->logger.info("received packet");
+      Serial.print(result.dataLength);
+      Serial.print(" ");
+      Serial.print(result.packetId);
+      Serial.print(" ");
+      Serial.println(result.packetIndex);
+
+      this->bufferLength = 0;
+      free(packet); // TODO: Handle packet
     } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
-      // TODO: Handle other cases too
+      this->logger.info("received packet with failed crc check.");
+      this->bufferLength = 0;
+    } else if (result.status == PacketDeserializer::PacketStatus::Invalid) {
+      this->logger.info("received invalid packet.");
+      this->bufferLength = 0;
+    } else if (result.status == PacketDeserializer::PacketStatus::Incomplete) {
+      break;
     }
   }
 }

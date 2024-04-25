@@ -17,7 +17,7 @@ public:
 private:
   uint8_t *buffer;
   size_t bufferLength = 0;
-  Logger logger = Logger("RadioConn");
+  Logger logger = Logger("Radio");
 };
 
 } // namespace radio

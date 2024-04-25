@@ -9,10 +9,12 @@
 
 using namespace radio::PacketDeserializer;
 
-DeserializeResult deserialize(const uint8_t *buffer, size_t bufferLength) {
+DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
+                                                         size_t bufferLength) {
   DeserializeResult result;
 
-  if (bufferLength < 3) // packet head, id, data length
+  if (bufferLength <
+      2 + sizeof(uint32_t)) // packet head, id, data length (uint32_t)
   {
     result.status = PacketStatus::Incomplete;
     return result;
@@ -24,9 +26,9 @@ DeserializeResult deserialize(const uint8_t *buffer, size_t bufferLength) {
   }
 
   uint8_t packetId = buffer[1];
-  uint8_t dataLength = buffer[2];
+  uint8_t dataLength = utils::conversions::convertToUint32(&buffer[2]);
   uint8_t expectedPacketLength =
-      dataLength + sizeof(uint8_t) * 3 + sizeof(size_t) +
+      dataLength + sizeof(uint8_t) * 2 + sizeof(uint32_t) * 2 +
       sizeof(uint8_t); // head | id | data length | ... | index | crc
 
   if (bufferLength < expectedPacketLength) {
@@ -35,14 +37,31 @@ DeserializeResult deserialize(const uint8_t *buffer, size_t bufferLength) {
     return result;
   }
 
-  size_t packetIndex = utils::conversions::convertToSizeT(
-      &buffer[expectedPacketLength - 1 - sizeof(size_t)]);
+  uint32_t packetIndex = utils::conversions::convertToUint32(
+      &buffer[expectedPacketLength - 1 - sizeof(uint32_t)]);
 
-  uint8_t crcValue = buffer[expectedPacketLength];
+  uint8_t crcValue = buffer[expectedPacketLength - 1];
   CRC8 crc;
-  crc.add(&buffer[3], dataLength);
+  crc.add(&buffer[6], dataLength);
+  for (size_t i = 0; i < dataLength; i++) {
+    Serial.print("Feeding ");
+    Serial.print(buffer[6 + i]);
+    Serial.println(" to CRC check");
+  }
 
-  if (crc.calc() != crcValue) {
+  uint8_t crcExpected = crc.calc();
+
+  if (crcExpected != crcValue) {
+    Serial.print("Expected CRC: ");
+    Serial.print(crcExpected);
+    Serial.print(" but got ");
+    Serial.print(crcValue);
+    Serial.print(", data length ");
+    Serial.print(dataLength);
+    Serial.print(", packet id was ");
+    Serial.print(packetId);
+    Serial.print(", packet index was ");
+    Serial.println(packetIndex);
     result.status = PacketStatus::FailedCRC;
     return result;
   }
