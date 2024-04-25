@@ -8,7 +8,7 @@
 
 using namespace radio;
 
-void Connection::tick() {
+Packet *Connection::recv() {
   uint8_t buffer[16];
   size_t available = 0;
 
@@ -17,47 +17,40 @@ void Connection::tick() {
     Serial1.readBytes(buffer, available);
   }
 
-  if (this->bufferLength + available > this->BUFFER_SIZE) {
-    this->logger.warn(
+  if (this->m_BufferLength + available > this->BUFFER_SIZE) {
+    this->m_Logger.warn(
         "Incoming packet won't fit in the available buffer size. Discarding "
         "entire packet buffer and hoping for the best.");
-    this->bufferLength = 0;
-    return;
+    this->m_BufferLength = 0;
+    return NULL;
   }
 
   for (size_t i = 0; i < available; i++) {
-    this->buffer[this->bufferLength++] = buffer[i];
+    this->m_Buffer[this->m_BufferLength++] = buffer[i];
   }
 
-  for (size_t i = 0; i < this->bufferLength; i++) {
-    if (this->buffer[i] != PACKET_HEAD_BYTE) {
+  for (size_t i = 0; i < this->m_BufferLength; i++) {
+    if (this->m_Buffer[i] != PACKET_HEAD_BYTE) {
       continue;
     }
 
-    auto result = PacketDeserializer::deserialize(&this->buffer[i],
-                                                  this->bufferLength - i);
+    auto result = PacketDeserializer::deserialize(&this->m_Buffer[i],
+                                                  this->m_BufferLength - i);
 
     if (result.status == PacketDeserializer::PacketStatus::Ok) {
-      uint8_t *packet = (uint8_t *)malloc(result.dataLength);
-      utils::arrays::copy(result.dataStart, packet, result.dataLength);
-
-      this->logger.info("received packet");
-      Serial.print(result.dataLength);
-      Serial.print(" ");
-      Serial.print(result.packetId);
-      Serial.print(" ");
-      Serial.println(result.packetIndex);
-
-      this->bufferLength = 0;
-      free(packet); // TODO: Handle packet
+      uint8_t *packet_buffer = (uint8_t *)malloc(result.dataLength);
+      utils::arrays::copy(result.dataStart, packet_buffer, result.dataLength);
+      this->m_BufferLength = 0;
     } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
-      this->logger.info("received packet with failed crc check.");
-      this->bufferLength = 0;
+      this->m_Logger.info("received packet with failed crc check.");
+      this->m_BufferLength = 0;
     } else if (result.status == PacketDeserializer::PacketStatus::Invalid) {
-      this->logger.info("received invalid packet.");
-      this->bufferLength = 0;
+      this->m_Logger.info("received invalid packet.");
+      this->m_BufferLength = 0;
     } else if (result.status == PacketDeserializer::PacketStatus::Incomplete) {
       break;
     }
   }
+
+  return NULL;
 }

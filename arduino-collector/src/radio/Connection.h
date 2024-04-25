@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Packet.h"
 #include <Arduino.h>
 #include <log/Logger.h>
 #include <stdint.h>
@@ -8,16 +9,16 @@ namespace radio {
 
 class Connection {
 public:
-  Connection() { buffer = (uint8_t *)malloc(BUFFER_SIZE); }
-  ~Connection() { free(buffer); }
+  Connection() { m_Buffer = (uint8_t *)malloc(BUFFER_SIZE); }
+  ~Connection() { free(m_Buffer); }
 
   static const size_t BUFFER_SIZE = 1024;
-  void tick();
+  Packet *recv();
 
 private:
-  uint8_t *buffer;
-  size_t bufferLength = 0;
-  Logger logger = Logger("Radio");
+  uint8_t *m_Buffer;
+  size_t m_BufferLength = 0;
+  Logger m_Logger = Logger("Radio");
 };
 
 } // namespace radio
