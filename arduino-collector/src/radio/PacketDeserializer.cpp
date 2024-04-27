@@ -57,10 +57,6 @@ DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
 
   if (crcExpected != crcValue) {
     result.status = PacketStatus::FailedCRC;
-    Serial.print("Expected CRC ");
-    Serial.print(crcExpected);
-    Serial.print(" but got ");
-    Serial.println(crcValue);
     return result;
   }
 

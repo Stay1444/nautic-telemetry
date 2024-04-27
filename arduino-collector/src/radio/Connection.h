@@ -14,6 +14,7 @@ public:
 
   static const size_t BUFFER_SIZE = 1024;
   Packet *recv();
+  void send(Packet *packet);
 
 private:
   uint8_t *m_Buffer;

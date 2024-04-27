@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <Arduino.h>
+#include <CRC8.h>
 #include <HardwareSerial.h>
 
 #include "Connection.h"
@@ -43,9 +44,8 @@ Packet *Connection::recv() {
       utils::arrays::copy(result.dataStart, packet_buffer, result.dataLength);
       this->m_BufferLength = 0;
       Cursor cursor(packet_buffer, result.dataLength);
-      // Packet *packet = Packet::deserialize(cursor, result.packetId);
-      // return packet;
-      this->m_Logger.info("Received correct packet");
+      Packet *packet = Packet::deserialize(cursor, result.packetId);
+      return packet;
     } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
       this->m_Logger.info("received packet with failed crc check.");
       this->m_BufferLength = 0;
@@ -58,4 +58,23 @@ Packet *Connection::recv() {
   }
 
   return NULL;
+}
+
+void Connection::send(Packet *packet) {
+  PacketFrame frame = packet->serialize();
+  free(packet);
+
+  Writer writer;
+
+  writer.write((uint8_t)PACKET_HEAD_BYTE);
+  writer.write(frame.id);
+  writer.write((uint32_t)frame.writer.length());
+  writer.write(frame.writer.raw(), frame.writer.length());
+
+  CRC8 crc;
+  crc.add(frame.writer.raw(), frame.writer.length());
+
+  writer.write(crc.calc());
+
+  Serial1.write((char *)writer.raw(), writer.length());
 }
