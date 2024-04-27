@@ -26,23 +26,41 @@ DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
   }
 
   Cursor cursor(buffer, bufferLength);
+  cursor.skip(1);
 
-  uint8_t packetId = cursor.next();
+  uint8_t packetId = 0;
+  if (!cursor.next(packetId)) {
+    result.status = PacketStatus::Incomplete;
+    return result;
+  }
 
-  uint32_t dataLength = cursor.next_u32();
+  uint32_t dataLength = 0;
+
+  if (!cursor.next_u32(dataLength)) {
+    result.status = PacketStatus::Incomplete;
+    return result;
+  }
+
   size_t dataStart = cursor.position();
 
   CRC8 crc;
   crc.add(&buffer[dataStart], dataLength);
   cursor.skip(dataLength);
 
-  uint32_t packetIndex = cursor.next_u32();
+  uint8_t crcValue = 0;
+  if (!cursor.next(crcValue)) {
+    result.status = PacketStatus::Incomplete;
+    return result;
+  }
 
-  uint8_t crcValue = cursor.next();
   uint8_t crcExpected = crc.calc();
 
   if (crcExpected != crcValue) {
     result.status = PacketStatus::FailedCRC;
+    Serial.print("Expected CRC ");
+    Serial.print(crcExpected);
+    Serial.print(" but got ");
+    Serial.println(crcValue);
     return result;
   }
 
@@ -50,7 +68,6 @@ DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
   result.dataStart = &buffer[dataStart];
   result.dataLength = dataLength;
   result.packetId = packetId;
-  result.packetIndex = packetIndex;
 
   return result;
 }

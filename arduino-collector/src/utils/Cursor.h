@@ -5,14 +5,15 @@
 class Cursor {
 public:
   Cursor(const uint8_t *buffer, size_t length);
-  ~Cursor();
+  ~Cursor() = default;
 
-  uint8_t next();
-  uint32_t next_u32();
-  void skip(uint32_t count);
+  bool next(uint8_t &result);
+  bool next_u32(uint32_t &result);
   void skip(size_t count);
   size_t position();
   size_t length();
+  size_t remaining();
+  void destroy();
 
 private:
   size_t m_Length = 0;

@@ -5,6 +5,7 @@
 #include "Connection.h"
 #include "PacketDeserializer.h"
 #include "Protocol.h"
+#include "radio/Packet.h"
 
 using namespace radio;
 
@@ -13,7 +14,7 @@ Packet *Connection::recv() {
   size_t available = 0;
 
   if (Serial1.available()) {
-    available = min(Serial1.available(), sizeof(buffer));
+    available = min((size_t)Serial1.available(), sizeof(buffer));
     Serial1.readBytes(buffer, available);
   }
 
@@ -41,6 +42,10 @@ Packet *Connection::recv() {
       uint8_t *packet_buffer = (uint8_t *)malloc(result.dataLength);
       utils::arrays::copy(result.dataStart, packet_buffer, result.dataLength);
       this->m_BufferLength = 0;
+      Cursor cursor(packet_buffer, result.dataLength);
+      // Packet *packet = Packet::deserialize(cursor, result.packetId);
+      // return packet;
+      this->m_Logger.info("Received correct packet");
     } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
       this->m_Logger.info("received packet with failed crc check.");
       this->m_BufferLength = 0;
