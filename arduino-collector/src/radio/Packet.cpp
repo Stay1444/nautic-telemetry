@@ -4,16 +4,26 @@
 
 using namespace radio;
 
-Packet *Packet::deserialize(Cursor cursor, uint8_t packetId) {
-  Packet *result;
+Packet *Packet::deserialize(uint8_t *buffer, size_t bufferLength,
+                            uint8_t packetId) {
+  Packet *result = NULL;
+
+  Serial.print("Deserializing packet with id ");
+  Serial.println(packetId);
+
   switch (packetId) {
-  case 0:
-    packets::Master::Ping *packet = new packets::Master::Ping();
-    result = packet;
+  case MASTER_PING_PACKET:
+    result = new packets::Master::Ping();
+    break;
+  case MASTER_PROTOCOLTEST_PACKET:
+    Serial.println("deserializing protocoltest");
+    result = new packets::Master::ProtocolTest();
     break;
   }
 
-  cursor.destroy();
+  free(buffer);
+
+  Serial.println("Freed buffer");
 
   return result;
 }

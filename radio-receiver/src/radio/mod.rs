@@ -16,10 +16,15 @@ pub struct PacketFrame {
 }
 
 pub trait PacketGroup: Sized {
-    fn serialize(&self) -> anyhow::Result<PacketFrame>;
-    fn deserialize(frame: PacketFrame) -> anyhow::Result<Self>;
-
     fn id(&self) -> u8;
+}
+
+pub trait Deserializable: PacketGroup {
+    fn deserialize(frame: PacketFrame) -> anyhow::Result<Self>;
+}
+
+pub trait Serializable: PacketGroup {
+    fn serialize(&self) -> anyhow::Result<PacketFrame>;
 }
 
 pub async fn open(tty: PathBuf, baud: u32) -> anyhow::Result<(RadioReceiver, RadioSender)> {
@@ -32,7 +37,7 @@ pub async fn open(tty: PathBuf, baud: u32) -> anyhow::Result<(RadioReceiver, Rad
 
 pub struct RadioSender(WriteHalf<SerialStream>);
 impl RadioSender {
-    pub async fn send(&mut self, packet: impl PacketGroup) -> anyhow::Result<()> {
+    pub async fn send(&mut self, packet: impl Serializable) -> anyhow::Result<()> {
         let frame = packet.serialize()?;
 
         let mut packet = BytesMut::new().writer();
@@ -61,7 +66,7 @@ pub struct RadioReceiver(ReadHalf<SerialStream>);
 impl RadioReceiver {
     pub async fn recv<T>(&mut self) -> anyhow::Result<Option<T>>
     where
-        T: PacketGroup,
+        T: Deserializable,
     {
         while self.0.read_u8().await? != PACKET_HEAD {
             continue;

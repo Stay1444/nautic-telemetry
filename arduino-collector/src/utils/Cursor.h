@@ -8,7 +8,10 @@ public:
   ~Cursor() = default;
 
   bool next(uint8_t &result);
-  bool next_u32(uint32_t &result);
+  bool next(uint32_t &result);
+  bool next(int32_t &result);
+  bool next(bool &result);
+  bool next(float &result);
   void skip(size_t count);
   size_t position();
   size_t length();

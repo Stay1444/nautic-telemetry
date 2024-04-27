@@ -9,8 +9,7 @@ namespace radio::packets::Slave {
 
 class Pong : public Packet {
 public:
-  static constexpr uint8_t Id = SLAVE_PONG_PACKET;
-  uint8_t id() override { return Id; }
+  uint8_t id() override { return SLAVE_PONG_PACKET; }
 
   PacketFrame serialize() override {
     PacketFrame frame;
@@ -22,8 +21,7 @@ public:
 
 class GPS : public Packet {
 public:
-  static constexpr uint8_t Id = SLAVE_GPS_PACKET;
-  uint8_t id() override { return Id; }
+  uint8_t id() override { return SLAVE_GPS_PACKET; }
 
   uint8_t satellites = 0;
   float mps = 0.0;

@@ -35,6 +35,19 @@ void loop() {
 
     packets::Slave::Pong *pong = new packets::Slave::Pong();
     connection.send(pong);
+  } else if (packet->id() == MASTER_PROTOCOLTEST_PACKET) {
+    packets::Master::ProtocolTest *ptest =
+        (packets::Master::ProtocolTest *)packet;
+    logger.info("Received protocol test packet");
+
+    Serial.print("fieldA: ");
+    Serial.println(ptest->fieldA);
+    Serial.print("fieldB: ");
+    Serial.println(ptest->fieldB);
+    Serial.print("fieldC: ");
+    Serial.println(ptest->fieldC);
+
+    free(ptest);
   }
 
   return;

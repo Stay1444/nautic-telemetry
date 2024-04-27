@@ -40,11 +40,16 @@ Packet *Connection::recv() {
                                                   this->m_BufferLength - i);
 
     if (result.status == PacketDeserializer::PacketStatus::Ok) {
-      uint8_t *packet_buffer = (uint8_t *)malloc(result.dataLength);
-      utils::arrays::copy(result.dataStart, packet_buffer, result.dataLength);
+      uint8_t *packetBuffer = (uint8_t *)malloc(result.dataLength);
+      if (packetBuffer == NULL) {
+        this->m_Logger.error("Could not allocate memory for packet buffer");
+        return NULL;
+      }
+
+      utils::arrays::copy(result.dataStart, packetBuffer, result.dataLength);
       this->m_BufferLength = 0;
-      Cursor cursor(packet_buffer, result.dataLength);
-      Packet *packet = Packet::deserialize(cursor, result.packetId);
+      Packet *packet =
+          Packet::deserialize(packetBuffer, result.dataLength, result.packetId);
       return packet;
     } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
       this->m_Logger.info("received packet with failed crc check.");

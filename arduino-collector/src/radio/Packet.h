@@ -14,8 +14,9 @@ struct PacketFrame {
 class Packet {
 public:
   virtual ~Packet() = default;
-  static Packet *deserialize(Cursor cursor, uint8_t packetId);
-  virtual bool deserialize(Cursor cursor) {
+  static Packet *deserialize(uint8_t *buffer, size_t bufferLength,
+                             uint8_t packetId);
+  virtual bool deserialize(Cursor &cursor) {
     Serial.println(
         "ERROR: TRYING TO DESERIALIZE A PACKET THAT ISN'T DESERIALIZABLE");
     return false;

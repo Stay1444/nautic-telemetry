@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use clap::Parser;
 use radio::packets::{MasterPacket, SlavePacket};
 
@@ -10,11 +12,22 @@ async fn main() -> anyhow::Result<()> {
 
     let (mut receiver, mut sender) = radio::open(config.tty.into(), config.baud).await?;
 
-    sender.send(MasterPacket::Ping).await?;
+    for _ in 0..2 {
+        println!("Sending ping");
+        sender.send(MasterPacket::Ping).await?;
 
-    let result: Option<SlavePacket> = receiver.recv().await?;
+        let result: Option<SlavePacket> = receiver.recv().await?;
 
-    dbg!(result);
+        dbg!(result);
+    }
+
+    sender
+        .send(MasterPacket::ProtocolTest {
+            a: PI,
+            b: 144,
+            c: 441,
+        })
+        .await?;
 
     Ok(())
 }
