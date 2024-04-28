@@ -6,3 +6,20 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+clap.workspace = true
+dotenv.workspace = true
+
+tokio.workspace = true
+futures.workspace = true
+lapin.workspace = true
+
+anyhow.workspace = true
+
+serde.workspace = true
+serde_json.workspace = true
+
+queues.path = "../../libs/queues/"
+telemetry.path = "../../libs/telemetry/"
