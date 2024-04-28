@@ -14,9 +14,9 @@ Packet *Connection::recv() {
   uint8_t buffer[16];
   size_t available = 0;
 
-  if (Serial1.available()) {
-    available = min((size_t)Serial1.available(), sizeof(buffer));
-    Serial1.readBytes(buffer, available);
+  if (RADIO_PORT.available()) {
+    available = min((size_t)RADIO_PORT.available(), sizeof(buffer));
+    RADIO_PORT.readBytes(buffer, available);
   }
 
   if (this->m_BufferLength + available > this->BUFFER_SIZE) {
@@ -81,5 +81,5 @@ void Connection::send(Packet *packet) {
 
   writer.write(crc.calc());
 
-  Serial1.write((char *)writer.raw(), writer.length());
+  RADIO_PORT.write((char *)writer.raw(), writer.length());
 }

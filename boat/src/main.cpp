@@ -10,8 +10,7 @@ static Logger logger("main");
 using namespace radio;
 
 void setup() {
-  Serial.begin(9600);  // Serial port to computer
-  Serial1.begin(9600); // Serial port to HC1
+  Serial.begin(9600); // Serial port to computer
   delay(1000);
   logger.info("Ready");
 }

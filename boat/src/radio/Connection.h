@@ -7,12 +7,17 @@
 
 namespace radio {
 
+#define RADIO_PORT Serial1
+
 class Connection {
 public:
-  Connection() { m_Buffer = (uint8_t *)malloc(BUFFER_SIZE); }
+  Connection() {
+    RADIO_PORT.begin(9600);
+    m_Buffer = (uint8_t *)malloc(BUFFER_SIZE);
+  }
   ~Connection() { free(m_Buffer); }
 
-  static const size_t BUFFER_SIZE = 1024;
+  static const size_t BUFFER_SIZE = 256;
   Packet *recv();
   void send(Packet *packet);
 
