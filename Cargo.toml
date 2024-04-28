@@ -2,7 +2,7 @@
 members = [ "crates/libs/queues",
   "crates/libs/radio",
   "crates/libs/telemetry",
-  "crates/services/api",
+  "crates/services/api", "crates/services/app",
   "crates/services/opi-service",
 ]
 resolver = "2"
