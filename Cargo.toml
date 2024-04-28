@@ -1,0 +1,17 @@
+[workspace]
+members = [
+  "crates/apps/app",
+  "crates/libs/radio",
+  "crates/services/api",
+  "crates/services/opi-service",
+]
+resolver = "2"
+
+[workspace.dependencies]
+serde_json = { version = "1.0.116" }
+anyhow = "1.0.82"
+async-trait = "0.1.80"
+clap = { version = "4.5.4", features = ["derive"] }
+tokio = { version = "1.37.0", features = ["full"] }
+serde = { version = "1.0.99", features = ["derive"] }
+reqwest = { version = "0.12.4", features = ["json", "serde"] }
