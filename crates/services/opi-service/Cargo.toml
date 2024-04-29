@@ -9,6 +9,7 @@ edition = "2021"
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
+
 clap.workspace = true
 dotenv.workspace = true
 
@@ -20,10 +21,15 @@ anyhow.workspace = true
 
 serde.workspace = true
 bincode.workspace = true
+serde_yaml = "0.9.34"
 serde_json.workspace = true
+
 
 queues.path = "../../libs/queues/"
 telemetry.path = "../../libs/telemetry/"
 radio.path = "../../libs/radio/"
-gpio-cdev = { version = "0.6.0", features = ["tokio", "async-tokio", "futures"] }
-tokio-serial = "5.4.4"
+gpio-cdev = { version = "0.6.0", features = [
+  "tokio",
+  "async-tokio",
+  "futures",
+] }

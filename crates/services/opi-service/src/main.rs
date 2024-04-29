@@ -1,10 +1,4 @@
-use std::{
-    io::{Read, Write},
-    time::Duration,
-};
-
 use clap::Parser;
-use gpio_cdev::{Chip, LineRequestFlags};
 use lapin::{
     options::{BasicPublishOptions, QueueBindOptions},
     types::FieldTable,
@@ -12,10 +6,12 @@ use lapin::{
 };
 use radio::packets::SlavePacket;
 use telemetry::{ElectricalTelemetry, EnvironmentalTelemetry, SpatialTelemetry, Telemetry};
-use tokio_serial::SerialPortBuilderExt;
 use tracing::info;
 
+use crate::tagger::Tagger;
+
 pub mod config;
+pub mod tagger;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -24,30 +20,9 @@ async fn main() -> anyhow::Result<()> {
     setup_logging();
 
     let config = config::Configuration::parse();
+    let mut tagger = Tagger::new();
 
     info!("Starting");
-
-    let mut chip = Chip::new("/dev/gpiochip1")?;
-    let handle = chip
-        .get_line(6)?
-        .request(LineRequestFlags::OUTPUT, 1, "radio-set-pin")?;
-
-    println!("Setting to low");
-    handle.set_value(0)?;
-    let mut port = tokio_serial::new(config.tty.clone(), config.baud).open_native_async()?;
-
-    port.write_all(b"AT\r\n")?;
-
-    let mut buffer = vec![0u8; 8];
-
-    loop {
-        let read = port.read(&mut buffer)?;
-        if read > 0 {
-            println!("{}", String::from_utf8_lossy(&buffer));
-        }
-    }
-
-    return Ok(());
 
     let (mut rx, _tx) = radio::open(config.tty.into(), config.baud).await?;
 
@@ -93,13 +68,13 @@ async fn main() -> anyhow::Result<()> {
             })),
             SlavePacket::Voltage(voltage) => {
                 Some(Telemetry::Electrical(ElectricalTelemetry::Voltage {
-                    tag: String::from("Untagged"),
+                    tag: tagger.voltimeter(voltage.tag),
                     value: voltage.value,
                 }))
             }
             SlavePacket::Temperature(temperature) => Some(Telemetry::Environmental(
                 EnvironmentalTelemetry::Temperature {
-                    tag: String::from("Untagged"),
+                    tag: tagger.thermometer(temperature.tag),
                     value: temperature.value,
                 },
             )),
