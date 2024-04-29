@@ -9,11 +9,14 @@
 namespace radio {
 
 #define RADIO_PORT Serial1
+#define RADIO_MODE_PORT 4
 
 class Connection {
 public:
   Connection() {
     RADIO_PORT.begin(9600);
+    pinMode(RADIO_MODE_PORT, OUTPUT);
+    digitalWrite(RADIO_MODE_PORT, HIGH);
     m_Buffer = (uint8_t *)Allocator::Malloc(BUFFER_SIZE);
   }
   ~Connection() { Allocator::Free(m_Buffer); }

@@ -1,4 +1,6 @@
 #include "Thermistor.h"
+#include "radio/Connection.h"
+#include "radio/packets/Slave.h"
 
 float Thermistor::celsius() {
   int Vo;
@@ -13,4 +15,16 @@ float Thermistor::celsius() {
   Tc = T - 273.15;
 
   return Tc;
+}
+
+void Thermistor::tick(radio::Connection &radio) {
+  if (!this->m_Timer.fire())
+    return;
+
+  auto packet = new radio::packets::Slave::Temperature();
+
+  packet->tag = this->m_Tag;
+  packet->temperature = this->celsius();
+
+  radio.send(packet);
 }
