@@ -25,7 +25,7 @@ public:
   virtual PacketFrame serialize() {
     Serial.println(
         "ERROR: TRYING TO SERIALIZE A PACKET THAT ISN'T SERIALIZABLE");
-    return PacketFrame();
+    return {0};
   }
   virtual uint8_t id();
 };

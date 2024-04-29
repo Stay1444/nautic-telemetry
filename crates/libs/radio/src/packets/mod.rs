@@ -15,6 +15,7 @@ pub enum MasterPacket {
 pub enum SlavePacket {
     Pong,
     GPS(slave::GPS),
+    Temperature(slave::Temperature),
 }
 
 impl PacketGroup for MasterPacket {
@@ -47,6 +48,7 @@ impl PacketGroup for SlavePacket {
         match self {
             Self::Pong => 0,
             Self::GPS(_) => 1,
+            Self::Temperature(_) => 2,
         }
     }
 }
@@ -56,6 +58,7 @@ impl Deserializable for SlavePacket {
         Ok(match frame.id {
             0 => Self::Pong,
             1 => Self::GPS(slave::GPS::deserialize(frame.data)?),
+            2 => Self::Temperature(slave::Temperature::deserialize(frame.data)?),
             _ => return Err(anyhow!("Unknown Packet for id {}", frame.id)),
         })
     }

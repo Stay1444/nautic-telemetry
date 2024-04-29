@@ -1,4 +1,5 @@
 #include "Cursor.h"
+#include "utils/Allocator.h"
 #include <Arduino.h>
 #include <stdint.h>
 
@@ -23,7 +24,7 @@ void Cursor::destroy() {
     return;
   }
 
-  free((void *)this->m_Buffer);
+  Allocator::Free((void *)this->m_Buffer);
   this->m_Buffer = NULL;
 }
 
@@ -59,6 +60,26 @@ bool Cursor::next(int32_t &result) {
   if (!this->next(temp))
     return false;
   result = static_cast<int32_t>(temp);
+  return true;
+}
+
+bool Cursor::next(uint64_t &result) {
+  uint8_t a = 0, b = 0, c = 0, d = 0, e = 0, f = 0, g = 0, h = 0;
+  if (!next(a) || !next(b) || !next(c) || !next(d) || !next(e) || !next(f) ||
+      !next(g) || !next(h))
+    return false;
+  result = ((uint64_t)a << 56) | ((uint64_t)b << 48) | ((uint64_t)c << 40) |
+           ((uint64_t)d << 32) | ((uint64_t)e << 24) | ((uint64_t)f << 16) |
+           ((uint64_t)g << 8) | h;
+  return true;
+}
+
+bool Cursor::next(double &result) {
+  uint64_t temp;
+  if (!this->next(temp))
+    return false;
+  result =
+      *reinterpret_cast<double *>(&temp); // Interpret the uint64_t as a double
   return true;
 }
 

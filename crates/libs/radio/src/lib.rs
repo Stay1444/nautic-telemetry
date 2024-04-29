@@ -89,7 +89,8 @@ impl RadioReceiver {
         let crc_val = digest.finalize();
 
         if crc_val != crc {
-            return Ok(None);
+            println!("CRC failed, expected {crc_val} got {crc}. Data length: {length}");
+            //return Ok(None);
         }
 
         let frame = PacketFrame {

@@ -1,0 +1,1 @@
+amqp://root:VmwSJdytpN2PVoX7wzsMMNt99ZAjyNr8kapSMUBbQ5V8ot9gE5k8khC@zarozgroup.strangled.net:30397

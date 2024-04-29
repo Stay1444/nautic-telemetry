@@ -7,6 +7,7 @@
 #include "PacketDeserializer.h"
 #include "Protocol.h"
 #include "radio/Packet.h"
+#include "utils/Allocator.h"
 
 using namespace radio;
 
@@ -40,7 +41,7 @@ Packet *Connection::recv() {
                                                   this->m_BufferLength - i);
 
     if (result.status == PacketDeserializer::PacketStatus::Ok) {
-      uint8_t *packetBuffer = (uint8_t *)malloc(result.dataLength);
+      uint8_t *packetBuffer = (uint8_t *)Allocator::Malloc(result.dataLength);
       if (packetBuffer == NULL) {
         this->m_Logger.error("Could not allocate memory for packet buffer");
         return NULL;
@@ -67,14 +68,17 @@ Packet *Connection::recv() {
 
 void Connection::send(Packet *packet) {
   PacketFrame frame = packet->serialize();
+
   free(packet);
 
-  Writer writer;
+  Writer writer = Writer::create();
 
   writer.write((uint8_t)PACKET_HEAD_BYTE);
   writer.write(frame.id);
   writer.write((uint32_t)frame.writer.length());
   writer.write(frame.writer.raw(), frame.writer.length());
+
+  frame.writer.free();
 
   CRC8 crc;
   crc.add(frame.writer.raw(), frame.writer.length());
@@ -82,4 +86,6 @@ void Connection::send(Packet *packet) {
   writer.write(crc.calc());
 
   RADIO_PORT.write((char *)writer.raw(), writer.length());
+
+  writer.free();
 }

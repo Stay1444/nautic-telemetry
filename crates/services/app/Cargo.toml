@@ -9,6 +9,7 @@ edition = "2021"
 iced = { version = "0.12.1", features = ["tokio"] }
 
 tokio.workspace = true
+futures.workspace = true
 
 lapin.workspace = true
 anyhow.workspace = true

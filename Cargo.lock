@@ -215,6 +215,7 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "futures",
  "iced",
  "lapin",
  "queues",
@@ -2822,6 +2823,7 @@ dependencies = [
  "futures",
  "lapin",
  "queues",
+ "radio",
  "serde",
  "serde_json",
  "telemetry",

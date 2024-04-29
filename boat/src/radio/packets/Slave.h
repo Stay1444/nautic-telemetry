@@ -6,13 +6,15 @@ namespace radio::packets::Slave {
 
 #define SLAVE_PONG_PACKET 0
 #define SLAVE_GPS_PACKET 1
+#define SLAVE_TEMPERATURE_PACKET 2
+#define SLAVE_VOLTAGE_PACKET 3
 
 class Pong : public Packet {
 public:
   uint8_t id() override { return SLAVE_PONG_PACKET; }
 
   PacketFrame serialize() override {
-    PacketFrame frame;
+    PacketFrame frame = {0};
     frame.id = this->id();
     frame.writer = Writer();
     return frame;
@@ -25,18 +27,61 @@ public:
 
   uint8_t satellites = 0;
   float mps = 0.0;
-  float lat = 0.0;
-  float lon = 0.0;
+  double lat = 0.0;
+  double lon = 0.0;
 
   PacketFrame serialize() override {
-    PacketFrame frame;
+    PacketFrame frame = {0};
     frame.id = this->id();
-    Writer writer;
+
+    Writer writer = Writer::create();
 
     writer.write(this->satellites);
     writer.write(this->mps);
     writer.write(this->lat);
     writer.write(this->lon);
+
+    frame.writer = writer;
+    return frame;
+  }
+};
+
+class Temperature : public Packet {
+public:
+  uint8_t id() override { return SLAVE_TEMPERATURE_PACKET; }
+
+  uint8_t tag;
+  float temperature = 0.0;
+
+  PacketFrame serialize() override {
+    PacketFrame frame = {0};
+    frame.id = this->id();
+
+    Writer writer = Writer::create();
+
+    writer.write(this->tag);
+    writer.write(this->temperature);
+
+    frame.writer = writer;
+    return frame;
+  }
+};
+
+class Voltage : public Packet {
+public:
+  uint8_t id() override { return SLAVE_VOLTAGE_PACKET; }
+
+  uint8_t tag;
+  float voltage = 0.0;
+
+  PacketFrame serialize() override {
+    PacketFrame frame = {0};
+    frame.id = this->id();
+
+    Writer writer = Writer::create();
+
+    writer.write(this->tag);
+    writer.write(this->voltage);
 
     frame.writer = writer;
     return frame;

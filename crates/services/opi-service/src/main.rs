@@ -6,6 +6,7 @@ use lapin::{
     types::FieldTable,
     BasicProperties, Channel, ConnectionProperties,
 };
+use radio::packets::SlavePacket;
 use tracing::info;
 
 pub mod config;
@@ -20,6 +21,12 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Starting");
 
+    let (mut rx, _tx) = radio::open(config.tty.into(), config.baud).await?;
+
+    while let Ok(packet) = rx.recv::<SlavePacket>().await {
+        dbg!(packet);
+    }
+
     let connection =
         lapin::Connection::connect(&config.amqp_addr, ConnectionProperties::default()).await?;
 
@@ -27,10 +34,10 @@ async fn main() -> anyhow::Result<()> {
 
     channel
         .exchange_declare(
-            "telemetry-exange",
-            lapin::ExchangeKind::Fanout,
-            ExchangeDeclareOptions::default(),
-            FieldTable::default(),
+            queues::telemetry::exange::NAME,
+            queues::telemetry::exange::KIND,
+            queues::telemetry::exange::options(),
+            queues::telemetry::exange::arguments(),
         )
         .await?;
 

@@ -10,8 +10,10 @@ public:
   bool next(uint8_t &result);
   bool next(uint32_t &result);
   bool next(int32_t &result);
+  bool next(uint64_t &result);
   bool next(bool &result);
   bool next(float &result);
+  bool next(double &result);
   void skip(size_t count);
   size_t position();
   size_t length();

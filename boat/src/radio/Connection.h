@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Packet.h"
+#include "utils/Allocator.h"
 #include <Arduino.h>
 #include <log/Logger.h>
 #include <stdint.h>
@@ -13,9 +14,9 @@ class Connection {
 public:
   Connection() {
     RADIO_PORT.begin(9600);
-    m_Buffer = (uint8_t *)malloc(BUFFER_SIZE);
+    m_Buffer = (uint8_t *)Allocator::Malloc(BUFFER_SIZE);
   }
-  ~Connection() { free(m_Buffer); }
+  ~Connection() { Allocator::Free(m_Buffer); }
 
   static const size_t BUFFER_SIZE = 256;
   Packet *recv();
