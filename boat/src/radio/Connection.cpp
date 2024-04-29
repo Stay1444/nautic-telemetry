@@ -1,6 +1,5 @@
 #include "Utils.h"
 #include <Arduino.h>
-#include <CRC8.h>
 #include <HardwareSerial.h>
 
 #include "Connection.h"
@@ -79,11 +78,6 @@ void Connection::send(Packet *packet) {
   writer.write(frame.writer.raw(), frame.writer.length());
 
   frame.writer.free();
-
-  CRC8 crc;
-  crc.add(frame.writer.raw(), frame.writer.length());
-
-  writer.write(crc.calc());
 
   RADIO_PORT.write((char *)writer.raw(), writer.length());
 

@@ -47,13 +47,6 @@ impl RadioSender {
         packet.write_u32::<Endianness>(frame.data.len() as u32)?;
         packet.write_all(&frame.data)?;
 
-        const CRC: crc::Crc<u8> = crc::Crc::<u8>::new(&crc::CRC_8_SMBUS);
-        let mut digest = CRC.digest();
-        digest.update(&frame.data);
-        let crc_val = digest.finalize();
-
-        packet.write_u8(crc_val)?;
-
         let packet = packet.into_inner();
 
         self.0.write_all(&packet).await?;
@@ -64,7 +57,7 @@ impl RadioSender {
 
 pub struct RadioReceiver(ReadHalf<SerialStream>);
 impl RadioReceiver {
-    pub async fn recv<T>(&mut self) -> anyhow::Result<Option<T>>
+    pub async fn recv<T>(&mut self) -> anyhow::Result<T>
     where
         T: Deserializable,
     {
@@ -81,18 +74,6 @@ impl RadioReceiver {
             data.push(self.0.read_u8().await?);
         }
 
-        let crc = self.0.read_u8().await?;
-
-        const CRC: crc::Crc<u8> = crc::Crc::<u8>::new(&crc::CRC_8_SMBUS);
-        let mut digest = CRC.digest();
-        digest.update(&data);
-        let crc_val = digest.finalize();
-
-        if crc_val != crc {
-            println!("CRC failed, expected {crc_val} got {crc}. Data length: {length}");
-            //return Ok(None);
-        }
-
         let frame = PacketFrame {
             id,
             data: Bytes::from(data),
@@ -100,6 +81,6 @@ impl RadioReceiver {
 
         let packet = T::deserialize(frame)?;
 
-        Ok(Some(packet))
+        Ok(packet)
     }
 }

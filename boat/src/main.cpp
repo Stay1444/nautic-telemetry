@@ -1,6 +1,7 @@
 #include "FireTimer.h"
 #include "SoftwareSerial.h"
 #include "TinyGPS++.h"
+#include "Utils.h"
 #include "log/Logger.h"
 #include "metrics/Thermistor.h"
 #include "radio/Connection.h"
@@ -15,18 +16,31 @@ static TinyGPSPlus gps;
 static Thermistor therm(A1);
 static FireTimer thermTimer;
 
+static FireTimer voltageTimer;
+
 using namespace radio;
 
 void setup() {
   Serial.begin(9600); // Serial port to computer
   gpsSerial.begin(9600);
   thermTimer.begin(500);
+  voltageTimer.begin(500);
 
   delay(1000);
   logger.info("Ready");
+
+  pinMode(4, OUTPUT);
+  digitalWrite(4, HIGH);
 }
 
 void loop() {
+  digitalWrite(4, LOW);
+  RADIO_PORT.println("AT");
+  while (RADIO_PORT.available()) {
+    Serial.print((char)RADIO_PORT.read());
+  }
+  delay(1000);
+  return;
   radio::Packet *packet = NULL; // connection.recv();
 
   if (packet != NULL) {
@@ -46,6 +60,15 @@ void loop() {
 
     packet->tag = 0;
     packet->temperature = therm.celsius();
+
+    connection.send(packet);
+  }
+
+  if (voltageTimer.fire()) {
+    auto packet = new packets::Slave::Voltage();
+
+    packet->tag = 0;
+    packet->voltage = analogRead(A0) * 25.0 / 1024;
 
     connection.send(packet);
   }

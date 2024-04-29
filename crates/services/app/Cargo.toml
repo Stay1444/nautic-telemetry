@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 iced = { version = "0.12.1", features = ["tokio"] }
 
+bincode.workspace = true
+
 tokio.workspace = true
 futures.workspace = true
 

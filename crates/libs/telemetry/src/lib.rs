@@ -31,5 +31,5 @@ pub struct SpatialTelemetry {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RelayTelemetry {
     pub tag: String,
-    pub status: bool
+    pub status: bool,
 }

@@ -15,7 +15,7 @@ pub fn arguments() -> FieldTable {
     table
 }
 
-pub mod exange {
+pub mod exhange {
     use lapin::{options::ExchangeDeclareOptions, types::FieldTable, ExchangeKind};
 
     pub const NAME: &str = "telemetry-exange";

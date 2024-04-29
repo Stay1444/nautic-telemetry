@@ -27,7 +27,7 @@ impl GPS {
 #[derive(Clone, Debug)]
 pub struct Temperature {
     pub tag: u8,
-    pub temperature: f32,
+    pub value: f32,
 }
 
 impl Temperature {
@@ -36,7 +36,24 @@ impl Temperature {
 
         Ok(Self {
             tag: reader.read_u8()?,
-            temperature: reader.read_f32::<Endianness>()?,
+            value: reader.read_f32::<Endianness>()?,
+        })
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Voltage {
+    pub tag: u8,
+    pub value: f32,
+}
+
+impl Voltage {
+    pub fn deserialize(data: Bytes) -> anyhow::Result<Self> {
+        let mut reader = data.reader();
+
+        Ok(Self {
+            tag: reader.read_u8()?,
+            value: reader.read_f32::<Endianness>()?,
         })
     }
 }

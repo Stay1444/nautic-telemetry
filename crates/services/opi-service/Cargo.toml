@@ -19,8 +19,11 @@ lapin.workspace = true
 anyhow.workspace = true
 
 serde.workspace = true
+bincode.workspace = true
 serde_json.workspace = true
 
 queues.path = "../../libs/queues/"
 telemetry.path = "../../libs/telemetry/"
 radio.path = "../../libs/radio/"
+gpio-cdev = { version = "0.6.0", features = ["tokio", "async-tokio", "futures"] }
+tokio-serial = "5.4.4"
