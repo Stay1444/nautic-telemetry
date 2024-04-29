@@ -1,23 +1,29 @@
 [package]
-name = "app"
+name = "influx-feeder"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-iced = { version = "0.12.1", features = ["tokio"] }
-
-bincode.workspace = true
-
+anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
 tokio.workspace = true
 futures.workspace = true
 
+serde.workspace = true
+serde_json.workspace = true
+bincode.workspace = true
+
 lapin.workspace = true
-anyhow.workspace = true
+
+dotenv.workspace = true
+clap.workspace = true
+
+chrono.workspace = true
+influxdb.workspace = true
 
 telemetry.path = "../../libs/telemetry/"
 queues.path = "../../libs/queues/"

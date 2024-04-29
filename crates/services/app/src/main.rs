@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use futures::{channel::oneshot, SinkExt, StreamExt};
 use iced::{
@@ -6,7 +6,9 @@ use iced::{
     widget::{
         button, column,
         container::{self},
-        text, text_input, Column, Container,
+        row,
+        scrollable::{Direction, Properties},
+        text, text_input, Column, Container, Scrollable,
     },
     Application, Background, Border, Color, Command, Element, Length, Settings, Subscription,
     Theme,
@@ -22,6 +24,7 @@ use views::ConnectionForm;
 mod views;
 
 fn main() -> iced::Result {
+    setup_logging();
     NauticApp::run(Settings {
         antialiasing: true,
         ..Default::default()
@@ -32,7 +35,7 @@ struct NauticApp {
     state: AppState,
     on_connect: Option<oneshot::Sender<lapin::Connection>>,
 
-    temperature: String,
+    thermometers: HashMap<String, f32>,
 }
 
 enum AppState {
@@ -62,7 +65,7 @@ impl Application for NauticApp {
             Self {
                 state: AppState::Disconnected(ConnectionForm::new(url)),
                 on_connect: None,
-                temperature: String::from("Unknown"),
+                thermometers: Default::default(),
             },
             Command::none(),
         )
@@ -101,6 +104,7 @@ impl Application for NauticApp {
                             };
 
                             _ = sender.send(connection);
+                            self.thermometers = Default::default();
                             self.state = AppState::Connected;
                             _ = std::fs::write("connection.txt", url);
                         }
@@ -129,7 +133,11 @@ impl Application for NauticApp {
                         if let Telemetry::Environmental(env) = telemetry {
                             match env {
                                 EnvironmentalTelemetry::Temperature { tag, value } => {
-                                    self.temperature = format!("{value}ºC")
+                                    if let Some(temp) = self.thermometers.get_mut(&tag) {
+                                        *temp = value;
+                                    } else {
+                                        self.thermometers.insert(tag, value);
+                                    }
                                 }
                                 EnvironmentalTelemetry::Humidity { tag, value } => (),
                             }
@@ -184,12 +192,51 @@ impl Application for NauticApp {
                 .into();
         }
 
-        column![text(&self.temperature)].into()
+        let thermometers = Container::new(
+            column![
+                text("Thermometers").size(18),
+                Scrollable::new(Column::with_children(
+                    self.thermometers
+                        .iter()
+                        .map(|x| thermometer(x.0.as_str(), *x.1)),
+                ))
+                .width(Length::Shrink)
+                .height(Length::Shrink)
+                .direction(Direction::Vertical(Properties::default()))
+            ]
+            .spacing(10)
+            .padding(8),
+        )
+        .height(Length::FillPortion(1))
+        .width(Length::FillPortion(1))
+        .style(|theme: &Theme| container::Appearance {
+            border: Border {
+                width: 1.5,
+                color: theme.palette().primary,
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+
+        Container::new(row![column![thermometers]])
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
     }
 
     fn subscription(&self) -> iced::Subscription<Self::Message> {
         lapin_subscription().map(|x| Message::LapinEvent(Arc::new(x)))
     }
+
+    fn theme(&self) -> Self::Theme {
+        iced::Theme::GruvboxDark
+    }
+}
+
+fn thermometer(name: &str, value: f32) -> Element<Message> {
+    iced::widget::row![text(name), text(format!("{:.1} ºC", value))]
+        .spacing(8)
+        .into()
 }
 
 async fn connect_rabbitmq(url: String) -> Result<(Arc<lapin::Connection>, String), String> {
@@ -237,7 +284,7 @@ fn lapin_subscription() -> Subscription<LapinEvent> {
                             continue;
                         };
 
-                        if let Err(err) = lapin_declare_channels(&channel).await {
+                        if let Err(err) = queues::telemetry(&channel).await {
                             state = LapinState::Failed;
                             println!("Failed to declare channels {err}");
                             continue;
@@ -291,31 +338,15 @@ fn lapin_subscription() -> Subscription<LapinEvent> {
     )
 }
 
-async fn lapin_declare_channels(channel: &lapin::Channel) -> anyhow::Result<()> {
-    channel
-        .queue_declare(
-            queues::telemetry::NAME,
-            queues::telemetry::options(),
-            queues::telemetry::arguments(),
-        )
-        .await?;
-    channel
-        .exchange_declare(
-            queues::telemetry::exhange::NAME,
-            queues::telemetry::exhange::KIND,
-            queues::telemetry::exhange::options(),
-            queues::telemetry::exhange::arguments(),
-        )
-        .await?;
-    channel
-        .queue_bind(
-            queues::telemetry::NAME,
-            queues::telemetry::exhange::NAME,
-            "",
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
+fn setup_logging() {
+    #[cfg(debug_assertions)]
+    tracing_subscriber::fmt::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .pretty()
+        .init();
 
-    Ok(())
+    #[cfg(not(debug_assertions))]
+    tracing_subscriber::fmt::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 }

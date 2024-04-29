@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 lapin.workspace = true
+anyhow.workspace = true

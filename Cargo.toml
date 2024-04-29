@@ -1,8 +1,11 @@
 [workspace]
-members = [ "crates/libs/queues",
+members = [
+  "crates/libs/queues",
   "crates/libs/radio",
   "crates/libs/telemetry",
-  "crates/services/api", "crates/services/app",
+  "crates/services/api",
+  "crates/services/app",
+  "crates/services/influx-feeder",
   "crates/services/opi-service",
 ]
 resolver = "2"
@@ -15,9 +18,11 @@ clap = { version = "4.5.4", features = ["derive", "env"] }
 dotenv = "0.15.0"
 tokio = { version = "1.37.0", features = ["full"] }
 serde = { version = "1.0.99", features = ["derive"] }
+chrono = { version = "0.4.38", features = ["serde"] }
 bincode = "1.3.3"
 futures = "0.3.30"
 lapin = { version = "2.3.1", features = ["serde_json"] }
+influxdb = { version = "0.7.2", features = ["derive", "influxdb_derive"] }
 reqwest = { version = "0.12.3", features = [
   "stream",
   "rustls-tls",

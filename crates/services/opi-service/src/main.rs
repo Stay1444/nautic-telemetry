@@ -1,9 +1,5 @@
 use clap::Parser;
-use lapin::{
-    options::{BasicPublishOptions, QueueBindOptions},
-    types::FieldTable,
-    BasicProperties, ConnectionProperties,
-};
+use lapin::{options::BasicPublishOptions, BasicProperties, ConnectionProperties};
 use radio::packets::SlavePacket;
 use telemetry::{ElectricalTelemetry, EnvironmentalTelemetry, SpatialTelemetry, Telemetry};
 use tracing::info;
@@ -31,32 +27,7 @@ async fn main() -> anyhow::Result<()> {
 
     let channel = connection.create_channel().await?;
 
-    channel
-        .queue_declare(
-            queues::telemetry::NAME,
-            queues::telemetry::options(),
-            queues::telemetry::arguments(),
-        )
-        .await?;
-
-    channel
-        .exchange_declare(
-            queues::telemetry::exhange::NAME,
-            queues::telemetry::exhange::KIND,
-            queues::telemetry::exhange::options(),
-            queues::telemetry::exhange::arguments(),
-        )
-        .await?;
-
-    channel
-        .queue_bind(
-            queues::telemetry::NAME,
-            queues::telemetry::exhange::NAME,
-            "",
-            QueueBindOptions::default(),
-            FieldTable::default(),
-        )
-        .await?;
+    queues::telemetry(&channel).await?;
 
     while let Ok(packet) = rx.recv::<SlavePacket>().await {
         let telemetry = match packet {
