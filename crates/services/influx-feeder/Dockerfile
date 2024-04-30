@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN cargo build --release
+RUN cargo build --release --package influx-feeder
 
 FROM debian
 
