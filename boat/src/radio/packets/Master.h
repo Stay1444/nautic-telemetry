@@ -14,7 +14,7 @@ public:
   uint8_t value = 0;
 
   virtual bool deserialize(Cursor &cursor) override {
-    return cursor.next(value);
+    return cursor.next(this->value);
   }
 };
 
