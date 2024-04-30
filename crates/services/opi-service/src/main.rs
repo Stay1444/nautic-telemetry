@@ -9,7 +9,7 @@ use radio::{
 };
 use telemetry::{ElectricalTelemetry, EnvironmentalTelemetry, SpatialTelemetry, Telemetry};
 use tokio::sync::Mutex;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::tagger::Tagger;
 
@@ -44,6 +44,8 @@ async fn main() -> anyhow::Result<()> {
             SlavePacket::Pong(pong) => {
                 let mut lock = pending_pings.lock().await;
                 let Some(index) = lock.iter().position(|x| x.0 == pong.id) else {
+                    warn!("Got response to unsolicited ping, {}, corruption?", pong.id);
+                    lock.clear();
                     continue;
                 };
 
@@ -84,7 +86,6 @@ async fn main() -> anyhow::Result<()> {
                     tx: radio.tx,
                 }))
             }
-            _ => None,
         };
 
         let Some(telemetry) = telemetry else {
@@ -103,7 +104,7 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
 
-        println!("Pushed telemetry");
+        info!("Pushed telemetry");
     }
 
     Ok(())
@@ -129,6 +130,8 @@ async fn pinger(
     let mut id = 0;
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
+
+        info!("Sent ping {id}");
 
         tx.send(MasterPacket::Ping(radio::packets::master::Ping { id }))
             .await?;

@@ -29,6 +29,9 @@ void loop() {
     if (packet->id() == MASTER_PING_PACKET) {
       packets::Master::Ping *ping = (packets::Master::Ping *)packet;
       packets::Slave::Pong *pong = new packets::Slave::Pong();
+      logger.info("Got ping request");
+      Serial.print("Ping request id: ");
+      Serial.println(ping->value);
       pong->value = ping->value;
       free(ping);
       connection.send(pong);
