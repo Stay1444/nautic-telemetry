@@ -19,9 +19,12 @@ public:
   PacketFrame serialize() override {
     PacketFrame frame = {0};
     frame.id = this->id();
-    frame.writer = Writer();
-    frame.writer.write(value);
 
+    Writer writer = Writer::create();
+
+    writer.write(value);
+
+    frame.writer = writer;
     return frame;
   }
 };
