@@ -76,6 +76,7 @@ async fn main() -> anyhow::Result<()> {
                         rx: _,
                         tx: _,
                     } => "radio",
+                    telemetry::SystemTelemetry::Ping { milliseconds: _ } => "radio-ping",
                 },
                 _ => "todo",
             },
@@ -94,6 +95,9 @@ async fn main() -> anyhow::Result<()> {
                     query = query.add_field("channel", channel);
                     query = query.add_field("rx", rx);
                     query = query.add_field("tx", tx);
+                }
+                telemetry::SystemTelemetry::Ping { milliseconds } => {
+                    query = query.add_field("value", milliseconds);
                 }
             },
             _ => {

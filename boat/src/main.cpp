@@ -28,11 +28,9 @@ void loop() {
   if (packet != NULL) {
     if (packet->id() == MASTER_PING_PACKET) {
       packets::Master::Ping *ping = (packets::Master::Ping *)packet;
-
-      logger.info("Received ping packet");
-      free(ping);
-
       packets::Slave::Pong *pong = new packets::Slave::Pong();
+      pong->value = ping->value;
+      free(ping);
       connection.send(pong);
     }
   }

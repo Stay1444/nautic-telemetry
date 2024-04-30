@@ -38,4 +38,5 @@ pub struct RelayTelemetry {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum SystemTelemetry {
     Radio { channel: u8, rx: u32, tx: u32 },
+    Ping { milliseconds: u64 },
 }

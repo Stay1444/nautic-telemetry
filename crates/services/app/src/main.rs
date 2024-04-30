@@ -150,6 +150,7 @@ impl Application for NauticApp {
                                 telemetry::SystemTelemetry::Radio { channel, rx, tx } => {
                                     self.radio = (*rx, *tx)
                                 }
+                                _ => (),
                             }
                         }
                     }

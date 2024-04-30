@@ -14,10 +14,14 @@ class Pong : public Packet {
 public:
   uint8_t id() override { return SLAVE_PONG_PACKET; }
 
+  uint8_t value = 0;
+
   PacketFrame serialize() override {
     PacketFrame frame = {0};
     frame.id = this->id();
     frame.writer = Writer();
+    frame.writer.write(value);
+
     return frame;
   }
 };
