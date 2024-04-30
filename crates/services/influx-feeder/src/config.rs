@@ -6,4 +6,7 @@ pub struct Configuration {
     pub amqp_addr: String,
     #[clap(long, env)]
     pub influx_addr: String,
+
+    #[clap(long, env)]
+    pub influx_token: String,
 }

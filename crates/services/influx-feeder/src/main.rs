@@ -1,7 +1,7 @@
-use chrono::{DateTime, Utc};
+use chrono::Utc;
 use clap::Parser;
 use futures::StreamExt;
-use influxdb::{InfluxDbWriteable, Timestamp, WriteQuery};
+use influxdb::{Timestamp, WriteQuery};
 use lapin::{options::BasicConsumeOptions, types::FieldTable, ConnectionProperties};
 use telemetry::Telemetry;
 use tracing::{error, info};
@@ -18,9 +18,8 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Starting");
 
-    let influx_client = influxdb::Client::new(config.influx_addr, "easyrobotics").with_token(
-        "d9z-8VjZBaY8zB-JhoIXl9FbrMh_JlNSTq743BBdGG4FQRZOUInk9eKJ2lhlP2iVm44v5vcRW8CqZHbI8ORqVw==",
-    );
+    let influx_client =
+        influxdb::Client::new(config.influx_addr, "easyrobotics").with_token(config.influx_token);
 
     let connection =
         lapin::Connection::connect(&config.amqp_addr, ConnectionProperties::default()).await?;
