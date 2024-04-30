@@ -79,7 +79,7 @@ async fn main() -> anyhow::Result<()> {
                 telemetry::EnvironmentalTelemetry::Temperature { tag, value } => {
                     info!("Tag: {tag}");
                     query = query.add_tag("name", tag.to_owned());
-                    query = query.add_tag("value", *value);
+                    query = query.add_field("value", *value);
                 }
                 _ => (),
             },
