@@ -2,7 +2,11 @@ use chrono::Utc;
 use clap::Parser;
 use futures::StreamExt;
 use influxdb::{Timestamp, WriteQuery};
-use lapin::{options::BasicConsumeOptions, types::FieldTable, ConnectionProperties};
+use lapin::{
+    options::{BasicAckOptions, BasicConsumeOptions},
+    types::FieldTable,
+    ConnectionProperties,
+};
 use telemetry::Telemetry;
 use tracing::{error, info};
 
@@ -44,6 +48,8 @@ async fn main() -> anyhow::Result<()> {
             error!("Error receiving delivery: {}", delivery.unwrap_err());
             continue;
         };
+
+        delivery.ack(BasicAckOptions::default()).await?;
 
         let telemetry: Telemetry = match bincode::deserialize(&delivery.data) {
             Ok(x) => x,
