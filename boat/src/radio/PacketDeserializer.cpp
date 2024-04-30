@@ -39,6 +39,11 @@ DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
     return result;
   }
 
+  if (cursor.remaining() != dataLength) {
+    result.status = PacketStatus::Incomplete;
+    return result;
+  }
+
   size_t dataStart = cursor.position();
 
   result.status = PacketStatus::Ok;
