@@ -22,8 +22,9 @@ void setup() {
 }
 
 void loop() {
-  radio::Packet *packet = connection.recv();
   connection.tick();
+
+  radio::Packet *packet = connection.recv();
 
   if (packet != NULL) {
     if (packet->id() == MASTER_PING_PACKET) {
