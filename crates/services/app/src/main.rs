@@ -36,6 +36,7 @@ struct NauticApp {
     on_connect: Option<oneshot::Sender<lapin::Connection>>,
 
     thermometers: HashMap<String, f32>,
+    radio: (u32, u32),
 }
 
 enum AppState {
@@ -66,6 +67,7 @@ impl Application for NauticApp {
                 state: AppState::Disconnected(ConnectionForm::new(url)),
                 on_connect: None,
                 thermometers: Default::default(),
+                radio: (0, 0),
             },
             Command::none(),
         )
@@ -130,16 +132,24 @@ impl Application for NauticApp {
                         self.state = AppState::Disconnected(form);
                     }
                     LapinEvent::Telemetry(telemetry) => {
-                        if let Telemetry::Environmental(env) = telemetry {
+                        if let Telemetry::Environmental(env) = &telemetry {
                             match env {
                                 EnvironmentalTelemetry::Temperature { tag, value } => {
-                                    if let Some(temp) = self.thermometers.get_mut(&tag) {
-                                        *temp = value;
+                                    if let Some(temp) = self.thermometers.get_mut(tag) {
+                                        *temp = *value;
                                     } else {
-                                        self.thermometers.insert(tag, value);
+                                        self.thermometers.insert(tag.to_owned(), *value);
                                     }
                                 }
-                                EnvironmentalTelemetry::Humidity { tag, value } => (),
+                                _ => (),
+                            }
+                        }
+
+                        if let Telemetry::System(sys) = &telemetry {
+                            match sys {
+                                telemetry::SystemTelemetry::Radio { channel, rx, tx } => {
+                                    self.radio = (*rx, *tx)
+                                }
                             }
                         }
                     }
@@ -195,6 +205,7 @@ impl Application for NauticApp {
         let thermometers = Container::new(
             column![
                 text("Thermometers").size(18),
+                text(format!("RX {}B/s, TX {}B/s", self.radio.0, self.radio.1)),
                 Scrollable::new(Column::with_children(
                     self.thermometers
                         .iter()

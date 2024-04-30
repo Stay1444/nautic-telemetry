@@ -57,3 +57,22 @@ impl Voltage {
         })
     }
 }
+
+#[derive(Clone, Debug)]
+pub struct RadioReport {
+    pub channel: u8,
+    pub rx: u32,
+    pub tx: u32,
+}
+
+impl RadioReport {
+    pub fn deserialize(data: Bytes) -> anyhow::Result<Self> {
+        let mut reader = data.reader();
+
+        Ok(Self {
+            channel: reader.read_u8()?,
+            rx: reader.read_u32::<Endianness>()?,
+            tx: reader.read_u32::<Endianness>()?,
+        })
+    }
+}

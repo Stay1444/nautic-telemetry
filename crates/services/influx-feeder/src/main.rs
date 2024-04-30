@@ -70,6 +70,13 @@ async fn main() -> anyhow::Result<()> {
                     }
                     telemetry::EnvironmentalTelemetry::Humidity { tag: _, value: _ } => "humidity",
                 },
+                Telemetry::System(sys) => match sys {
+                    telemetry::SystemTelemetry::Radio {
+                        channel: _,
+                        rx: _,
+                        tx: _,
+                    } => "radio",
+                },
                 _ => "todo",
             },
         );
@@ -77,11 +84,17 @@ async fn main() -> anyhow::Result<()> {
         match &telemetry {
             Telemetry::Environmental(environmental) => match environmental {
                 telemetry::EnvironmentalTelemetry::Temperature { tag, value } => {
-                    info!("Tag: {tag}");
                     query = query.add_tag("name", tag.to_owned());
                     query = query.add_field("value", *value);
                 }
                 _ => (),
+            },
+            Telemetry::System(sys) => match sys {
+                telemetry::SystemTelemetry::Radio { channel, rx, tx } => {
+                    query = query.add_field("channel", channel);
+                    query = query.add_field("rx", rx);
+                    query = query.add_field("tx", tx);
+                }
             },
             _ => {
                 query = query.add_field("todo", "todo");

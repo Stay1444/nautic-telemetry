@@ -5,6 +5,7 @@
 #include "Connection.h"
 #include "PacketDeserializer.h"
 #include "Protocol.h"
+#include "packets/Slave.h"
 #include "radio/Packet.h"
 #include "utils/Allocator.h"
 
@@ -17,6 +18,7 @@ Packet *Connection::recv() {
   if (RADIO_PORT.available()) {
     available = min((size_t)RADIO_PORT.available(), sizeof(buffer));
     RADIO_PORT.readBytes(buffer, available);
+    this->m_Rx += available;
   }
 
   if (this->m_BufferLength + available > this->BUFFER_SIZE) {
@@ -79,7 +81,25 @@ void Connection::send(Packet *packet) {
 
   frame.writer.free();
 
+  this->m_Tx += writer.length();
+
   RADIO_PORT.write((char *)writer.raw(), writer.length());
 
   writer.free();
+}
+
+void Connection::tick() {
+  if (!this->m_StatisticsTimer.fire())
+    return;
+
+  auto packet = new packets::Slave::RadioReport();
+
+  packet->channel = this->m_Channel;
+  packet->rx = this->m_Rx;
+  packet->tx = this->m_Tx;
+
+  this->m_Rx = 0;
+  this->m_Tx = 0;
+
+  this->send(packet);
 }

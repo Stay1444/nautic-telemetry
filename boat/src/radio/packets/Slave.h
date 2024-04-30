@@ -8,6 +8,7 @@ namespace radio::packets::Slave {
 #define SLAVE_GPS_PACKET 1
 #define SLAVE_TEMPERATURE_PACKET 2
 #define SLAVE_VOLTAGE_PACKET 3
+#define SLAVE_RADIO_REPORT_PACKET 4
 
 class Pong : public Packet {
 public:
@@ -84,6 +85,30 @@ public:
     writer.write(this->voltage);
 
     frame.writer = writer;
+    return frame;
+  }
+};
+
+class RadioReport : public Packet {
+public:
+  uint8_t id() override { return SLAVE_RADIO_REPORT_PACKET; }
+
+  uint8_t channel = 0;
+  uint32_t rx = 0;
+  uint32_t tx = 0;
+
+  PacketFrame serialize() override {
+    PacketFrame frame = {0};
+    frame.id = this->id();
+
+    Writer writer = Writer::create();
+
+    writer.write(this->channel);
+    writer.write(this->rx);
+    writer.write(this->tx);
+
+    frame.writer = writer;
+
     return frame;
   }
 };

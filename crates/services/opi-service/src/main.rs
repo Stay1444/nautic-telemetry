@@ -49,6 +49,13 @@ async fn main() -> anyhow::Result<()> {
                     value: temperature.value,
                 },
             )),
+            SlavePacket::RadioReport(radio) => {
+                Some(Telemetry::System(telemetry::SystemTelemetry::Radio {
+                    channel: radio.channel,
+                    rx: radio.rx,
+                    tx: radio.tx,
+                }))
+            }
             _ => None,
         };
 

@@ -6,6 +6,7 @@ pub enum Telemetry {
     Electrical(ElectricalTelemetry),
     Environmental(EnvironmentalTelemetry),
     Relay(RelayTelemetry),
+    System(SystemTelemetry),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -32,4 +33,9 @@ pub struct SpatialTelemetry {
 pub struct RelayTelemetry {
     pub tag: String,
     pub status: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum SystemTelemetry {
+    Radio { channel: u8, rx: u32, tx: u32 },
 }

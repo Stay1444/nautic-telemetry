@@ -18,6 +18,7 @@ pub enum SlavePacket {
     GPS(slave::GPS),
     Temperature(slave::Temperature),
     Voltage(slave::Voltage),
+    RadioReport(slave::RadioReport),
 }
 
 impl PacketGroup for MasterPacket {
@@ -54,6 +55,7 @@ impl PacketGroup for SlavePacket {
             Self::GPS(_) => 1,
             Self::Temperature(_) => 2,
             Self::Voltage(_) => 3,
+            Self::RadioReport(_) => 4,
         }
     }
 }
@@ -65,6 +67,7 @@ impl Deserializable for SlavePacket {
             1 => Self::GPS(slave::GPS::deserialize(frame.data)?),
             2 => Self::Temperature(slave::Temperature::deserialize(frame.data)?),
             3 => Self::Voltage(slave::Voltage::deserialize(frame.data)?),
+            4 => Self::RadioReport(slave::RadioReport::deserialize(frame.data)?),
             _ => return Err(anyhow!("Unknown Packet for id {}", frame.id)),
         })
     }
