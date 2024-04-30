@@ -316,6 +316,14 @@ fn lapin_subscription() -> Subscription<LapinEvent> {
                             continue;
                         };
 
+                        if let Err(_) = delivery
+                            .ack(lapin::options::BasicAckOptions::default())
+                            .await
+                        {
+                            state = LapinState::Failed;
+                            continue;
+                        }
+
                         let telemetry: Telemetry = match bincode::deserialize(&delivery.data) {
                             Ok(x) => x,
                             Err(err) => {
