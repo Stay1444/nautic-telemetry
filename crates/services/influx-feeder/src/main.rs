@@ -72,8 +72,8 @@ async fn main() -> anyhow::Result<()> {
             Telemetry::Environmental(environmental) => match environmental {
                 telemetry::EnvironmentalTelemetry::Temperature { tag, value } => {
                     info!("Tag: {tag}");
-                    query = query.add_field("name", tag.to_owned());
-                    query = query.add_field("value", *value);
+                    query = query.add_tag("name", tag.to_owned());
+                    query = query.add_tag("value", *value);
                 }
                 _ => (),
             },
