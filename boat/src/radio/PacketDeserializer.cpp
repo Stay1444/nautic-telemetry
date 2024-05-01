@@ -39,7 +39,7 @@ DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
     return result;
   }
 
-  if (cursor.remaining() != dataLength) {
+  if (cursor.remaining() < dataLength) {
     result.status = PacketStatus::Incomplete;
     return result;
   }
@@ -50,6 +50,7 @@ DeserializeResult radio::PacketDeserializer::deserialize(const uint8_t *buffer,
   result.dataStart = &buffer[dataStart];
   result.dataLength = dataLength;
   result.packetId = packetId;
+  result.packetLength = cursor.position() + dataLength;
 
   return result;
 }

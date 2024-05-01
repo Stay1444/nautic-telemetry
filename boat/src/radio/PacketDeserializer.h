@@ -5,12 +5,13 @@
 
 namespace radio::PacketDeserializer {
 
-enum class PacketStatus { Ok, Incomplete, Invalid, FailedCRC };
+enum class PacketStatus { Ok, Incomplete, Invalid };
 
 struct DeserializeResult {
   PacketStatus status;
   const uint8_t *dataStart;
   size_t dataLength;
+  size_t packetLength;
   uint8_t packetId;
 };
 

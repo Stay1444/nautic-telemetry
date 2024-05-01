@@ -24,7 +24,7 @@ public:
   }
   ~Connection() { Allocator::Free(m_Buffer); }
 
-  static const size_t BUFFER_SIZE = 256;
+  static const size_t BUFFER_SIZE = 512;
   Packet *recv();
   void send(Packet *packet);
   void tick();

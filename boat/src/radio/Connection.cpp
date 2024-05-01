@@ -11,26 +11,16 @@
 
 using namespace radio;
 
+#define READ_CHUNK_SIZE 16
+
 Packet *Connection::recv() {
-  uint8_t buffer[16];
-  size_t available = 0;
+  while (RADIO_PORT.available() &&
+         this->m_BufferLength + READ_CHUNK_SIZE <= this->BUFFER_SIZE) {
+    size_t read = RADIO_PORT.readBytes(&this->m_Buffer[this->m_BufferLength],
+                                       READ_CHUNK_SIZE);
 
-  if (RADIO_PORT.available()) {
-    available = min((size_t)RADIO_PORT.available(), sizeof(buffer));
-    RADIO_PORT.readBytes(buffer, available);
-    this->m_Rx += available;
-  }
-
-  if (this->m_BufferLength + available > this->BUFFER_SIZE) {
-    this->m_Logger.warn(
-        "Incoming packet won't fit in the available buffer size. Discarding "
-        "entire packet buffer and hoping for the best.");
-    this->m_BufferLength = 0;
-    return NULL;
-  }
-
-  for (size_t i = 0; i < available; i++) {
-    this->m_Buffer[this->m_BufferLength++] = buffer[i];
+    this->m_BufferLength += read;
+    this->m_Rx += read;
   }
 
   for (size_t i = 0; i < this->m_BufferLength; i++) {
@@ -49,13 +39,18 @@ Packet *Connection::recv() {
       }
 
       utils::arrays::copy(result.dataStart, packetBuffer, result.dataLength);
-      this->m_BufferLength = 0;
+
+      if (this->m_BufferLength <= i + result.packetLength) {
+        this->m_BufferLength = 0;
+      } else {
+        utils::arrays::trimStart(this->m_Buffer, i + result.packetLength,
+                                 this->m_BufferLength);
+        this->m_BufferLength -= i + result.packetLength;
+      }
+
       Packet *packet =
           Packet::deserialize(packetBuffer, result.dataLength, result.packetId);
       return packet;
-    } else if (result.status == PacketDeserializer::PacketStatus::FailedCRC) {
-      this->m_Logger.info("received packet with failed crc check.");
-      this->m_BufferLength = 0;
     } else if (result.status == PacketDeserializer::PacketStatus::Invalid) {
       this->m_Logger.info("received invalid packet.");
       this->m_BufferLength = 0;
