@@ -3,6 +3,9 @@
 
 void logImplementation(const char *level, const char *name,
                        const char *message) {
+
+  Serial.print(millis());
+  Serial.print(" - ");
   Serial.print("[");
   Serial.print(level);
   Serial.print("] [");
