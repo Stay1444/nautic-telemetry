@@ -1,4 +1,11 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DatedTelemetry {
+    pub date: DateTime<Utc>,
+    pub telemetry: Telemetry,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum Telemetry {
@@ -38,5 +45,4 @@ pub struct RelayTelemetry {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum SystemTelemetry {
     Radio { channel: u8, rx: u32, tx: u32 },
-    Ping { milliseconds: u64 },
 }

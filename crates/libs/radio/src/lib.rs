@@ -1,11 +1,12 @@
-use std::{io::Write, path::PathBuf};
+use std::io::Write;
 
+use anyhow::anyhow;
 use byteorder::WriteBytesExt;
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use gpio_cdev::{Line, LineHandle, LineRequestFlags};
 use packets::{MasterPacket, SlavePacket};
 use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf};
-use tokio_serial::{SerialPortBuilderExt, SerialStream};
+use tokio_serial::{SerialPort, SerialPortBuilderExt, SerialStream};
 
 pub mod packets;
 
@@ -64,6 +65,7 @@ impl Radio {
         let mut packet = packet.into_inner();
 
         self.port.write_all_buf(&mut packet).await?;
+        Write::flush(&mut self.port)?;
 
         Ok(())
     }
@@ -74,8 +76,8 @@ impl Radio {
         }
 
         let id = self.port.read_u8().await?;
-        let length = self.port.read_u32().await?; // read_u32 reads in big endian. Use read_u32_le if
-                                                  // little-endianness is needed.
+        let length = self.port.read_u32().await?; // read length in big endian.
+
         let mut data = vec![];
 
         while data.len() < length as usize {

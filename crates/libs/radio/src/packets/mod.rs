@@ -1,5 +1,8 @@
 use anyhow::anyhow;
-use bytes::{BufMut, BytesMut};
+use byteorder::ReadBytesExt;
+use bytes::{Buf, BufMut, BytesMut};
+
+use crate::Endianness;
 
 use super::{Deserializable, PacketFrame, PacketGroup, Serializable};
 
@@ -14,7 +17,7 @@ pub enum MasterPacket {
 
 #[derive(Clone, Debug)]
 pub enum SlavePacket {
-    EndSendWindow,
+    EndSendWindow(u32),
     GPS(slave::GPS),
     Temperature(slave::Temperature),
     Voltage(slave::Voltage),
@@ -51,7 +54,7 @@ impl Serializable for MasterPacket {
 impl PacketGroup for SlavePacket {
     fn id(&self) -> u8 {
         match self {
-            Self::EndSendWindow => 0,
+            Self::EndSendWindow(_) => 0,
             Self::GPS(_) => 1,
             Self::Temperature(_) => 2,
             Self::Voltage(_) => 3,
@@ -63,7 +66,7 @@ impl PacketGroup for SlavePacket {
 impl Deserializable for SlavePacket {
     fn deserialize(frame: super::PacketFrame) -> anyhow::Result<Self> {
         Ok(match frame.id {
-            0 => Self::EndSendWindow,
+            0 => Self::EndSendWindow(frame.data.reader().read_u32::<Endianness>()?),
             1 => Self::GPS(slave::GPS::deserialize(frame.data)?),
             2 => Self::Temperature(slave::Temperature::deserialize(frame.data)?),
             3 => Self::Voltage(slave::Voltage::deserialize(frame.data)?),

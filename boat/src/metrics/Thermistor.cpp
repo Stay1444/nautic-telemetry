@@ -27,6 +27,4 @@ void Thermistor::tick(radio::Connection &radio) {
   packet->temperature = this->celsius();
 
   radio.queue(packet);
-
-  this->m_Logger.info("Thermistor sent information");
 }

@@ -1,13 +1,12 @@
-use chrono::Utc;
 use clap::Parser;
 use futures::StreamExt;
 use influxdb::{Timestamp, WriteQuery};
 use lapin::{
-    options::{BasicAckOptions, BasicConsumeOptions},
+    options::{BasicAckOptions, BasicConsumeOptions, ExchangeBindOptions},
     types::FieldTable,
     ConnectionProperties,
 };
-use telemetry::Telemetry;
+use telemetry::{DatedTelemetry, Telemetry};
 use tracing::{error, info};
 
 pub mod config;
@@ -30,11 +29,31 @@ async fn main() -> anyhow::Result<()> {
 
     let channel = connection.create_channel().await?;
 
-    queues::telemetry(&channel).await?;
+    queues::telemetry::exhange::declare(&channel).await?;
+
+    let queue_name = uuid::Uuid::new_v4().to_string();
+
+    channel
+        .queue_declare(
+            &queue_name,
+            queues::telemetry::options(),
+            queues::telemetry::arguments(),
+        )
+        .await?;
+
+    channel
+        .exchange_bind(
+            &queue_name,
+            queues::telemetry::exhange::NAME,
+            "",
+            ExchangeBindOptions::default(),
+            FieldTable::default(),
+        )
+        .await?;
 
     let mut consumer = channel
         .basic_consume(
-            queues::telemetry::NAME,
+            &queue_name,
             "influx-feeder",
             BasicConsumeOptions::default(),
             FieldTable::default(),
@@ -51,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
 
         delivery.ack(BasicAckOptions::default()).await?;
 
-        let telemetry: Telemetry = match bincode::deserialize(&delivery.data) {
+        let telemetry: DatedTelemetry = match bincode::deserialize(&delivery.data) {
             Ok(x) => x,
             Err(err) => {
                 error!("Error deserializing delivery: {err}");
@@ -61,49 +80,59 @@ async fn main() -> anyhow::Result<()> {
 
         info!("Received telemetry, pushing to influxdb");
 
-        let mut query = WriteQuery::new(
-            Timestamp::Milliseconds(Utc::now().timestamp_millis() as u128),
-            match &telemetry {
-                Telemetry::Environmental(environmental) => match environmental {
-                    telemetry::EnvironmentalTelemetry::Temperature { tag: _, value: _ } => {
-                        "temperature"
-                    }
-                    telemetry::EnvironmentalTelemetry::Humidity { tag: _, value: _ } => "humidity",
-                },
-                Telemetry::System(sys) => match sys {
-                    telemetry::SystemTelemetry::Radio {
-                        channel: _,
-                        rx: _,
-                        tx: _,
-                    } => "radio",
-                    telemetry::SystemTelemetry::Ping { milliseconds: _ } => "radio-ping",
-                },
-                _ => "todo",
+        let query = match &telemetry.telemetry {
+            Telemetry::Spatial(spatial) => WriteQuery::new(
+                Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                "space",
+            )
+            .add_field("lat", spatial.latitude)
+            .add_field("lon", spatial.longitude)
+            .add_field("velocity", spatial.velocity)
+            .add_field("satellites", spatial.satellites),
+            Telemetry::Electrical(x) => match x {
+                telemetry::ElectricalTelemetry::Amps { tag, value } => WriteQuery::new(
+                    Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                    "amperage",
+                )
+                .add_tag("name", tag.to_owned())
+                .add_field("value", value),
+                telemetry::ElectricalTelemetry::Voltage { tag, value } => WriteQuery::new(
+                    Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                    "voltage",
+                )
+                .add_tag("name", tag.to_owned())
+                .add_field("value", value),
             },
-        );
-
-        match &telemetry {
-            Telemetry::Environmental(environmental) => match environmental {
-                telemetry::EnvironmentalTelemetry::Temperature { tag, value } => {
-                    query = query.add_tag("name", tag.to_owned());
-                    query = query.add_field("value", *value);
-                }
-                _ => (),
+            Telemetry::Environmental(x) => match x {
+                telemetry::EnvironmentalTelemetry::Temperature { tag, value } => WriteQuery::new(
+                    Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                    "temperature",
+                )
+                .add_tag("name", tag.to_owned())
+                .add_field("value", value),
+                telemetry::EnvironmentalTelemetry::Humidity { tag, value } => WriteQuery::new(
+                    Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                    "humidity",
+                )
+                .add_tag("name", tag.to_owned())
+                .add_field("value", value),
             },
-            Telemetry::System(sys) => match sys {
-                telemetry::SystemTelemetry::Radio { channel, rx, tx } => {
-                    query = query.add_field("channel", channel);
-                    query = query.add_field("rx", rx);
-                    query = query.add_field("tx", tx);
-                }
-                telemetry::SystemTelemetry::Ping { milliseconds } => {
-                    query = query.add_field("value", milliseconds);
-                }
+            Telemetry::Relay(x) => WriteQuery::new(
+                Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                "relay",
+            )
+            .add_tag("name", x.tag.to_owned())
+            .add_field("status", x.status),
+            Telemetry::System(x) => match x {
+                telemetry::SystemTelemetry::Radio { channel, rx, tx } => WriteQuery::new(
+                    Timestamp::Milliseconds(telemetry.date.timestamp_millis() as u128),
+                    "radio",
+                )
+                .add_field("channel", channel)
+                .add_field("rx", rx)
+                .add_field("tx", tx),
             },
-            _ => {
-                query = query.add_field("todo", "todo");
-            }
-        }
+        };
 
         influx_client.query(query).await?;
     }

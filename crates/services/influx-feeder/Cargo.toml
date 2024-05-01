@@ -25,5 +25,7 @@ clap.workspace = true
 chrono.workspace = true
 influxdb.workspace = true
 
+uuid.workspace = true
+
 telemetry.path = "../../libs/telemetry/"
 queues.path = "../../libs/queues/"

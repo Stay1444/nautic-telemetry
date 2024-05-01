@@ -12,10 +12,10 @@ static Logger logger("main");
 
 static MetricTask *tasks[2] = {new Thermistor(A1, 0), new GPS(8, 7)};
 
-void handlePacket(radio::Packet *packet) { free(packet); }
+void handlePacket(radio::Packet *packet) { Allocator::Free(packet); }
 
 void setup() {
-  Serial.begin(9600); // Serial port to computer
+  Serial.begin(9600);
   connection.handler(handlePacket);
   logger.info("Ready");
 }

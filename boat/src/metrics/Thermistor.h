@@ -9,7 +9,7 @@ class Thermistor : public MetricTask {
 public:
   Thermistor(uint8_t pin, uint8_t tag) : m_Logger("Thermistor") {
     this->m_Pin = pin;
-    m_Timer.begin(500);
+    m_Timer.begin(1000);
   }
 
   float celsius();

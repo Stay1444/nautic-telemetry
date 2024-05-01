@@ -1,15 +1,13 @@
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 
-use chrono::{DateTime, Utc};
+use chrono::{TimeDelta, Utc};
 use clap::Parser;
-use lapin::{options::BasicPublishOptions, BasicProperties, ConnectionProperties};
-use radio::{
-    packets::{MasterPacket, SlavePacket},
-    RadioSender,
+use lapin::{
+    options::BasicPublishOptions, protocol::basic::AMQPProperties, Channel, ConnectionProperties,
 };
-use telemetry::{ElectricalTelemetry, EnvironmentalTelemetry, SpatialTelemetry, Telemetry};
-use tokio::sync::Mutex;
-use tracing::{info, warn};
+use radio::packets::{MasterPacket, SlavePacket};
+use telemetry::{DatedTelemetry, Telemetry};
+use tracing::info;
 
 use crate::tagger::Tagger;
 
@@ -23,86 +21,55 @@ async fn main() -> anyhow::Result<()> {
     setup_logging();
 
     let config = config::Configuration::parse();
-    let mut tagger = Tagger::new();
 
     info!("Starting");
 
     let mut radio = radio::open(config.tty, config.baud, config.gpio_chip, config.gpio_pin).await?;
+    let mut tagger = Tagger::new();
 
     let connection =
         lapin::Connection::connect(&config.amqp_addr, ConnectionProperties::default()).await?;
 
     let channel = connection.create_channel().await?;
 
-    queues::telemetry(&channel).await?;
+    queues::telemetry::exhange::declare(&channel).await?;
 
     loop {
-        let packet = rx.recv::<SlavePacket>().await.unwrap();
-        let telemetry = match packet {
-            SlavePacket::Pong(pong) => {
-                let mut lock = pending_pings.lock().await;
-                let Some(index) = lock.iter().position(|x| x.0 == pong.id) else {
-                    warn!("Got response to unsolicited ping, {}, corruption?", pong.id);
-                    lock.clear();
-                    continue;
-                };
+        tokio::time::sleep(Duration::from_secs(1)).await;
+        info!("Starting send window");
+        radio.write(MasterPacket::StartSendWindow).await?;
 
-                let (_, time) = lock.remove(index);
+        let mut packets = vec![];
+        let mut time = 0;
 
-                let now = Utc::now();
+        loop {
+            let packet = tokio::select! {
+                packet = radio.read() => {
+                    packet?
+                }
+                _ = tokio::time::sleep(Duration::from_millis(100)) => {
+                    break
+                }
+            };
 
-                let diff = now - time;
-
-                let milliseconds = diff.num_milliseconds();
-
-                Some(Telemetry::System(telemetry::SystemTelemetry::Ping {
-                    milliseconds: milliseconds as u64,
-                }))
+            if let SlavePacket::EndSendWindow(millis) = packet {
+                time = millis;
+                info!("Send window ended");
+                break;
             }
-            SlavePacket::GPS(gps) => Some(Telemetry::Spatial(SpatialTelemetry {
-                latitude: gps.lat,
-                longitude: gps.lon,
-                velocity: gps.mps,
-                satellites: gps.satellites as i32,
-            })),
-            SlavePacket::Voltage(voltage) => {
-                Some(Telemetry::Electrical(ElectricalTelemetry::Voltage {
-                    tag: tagger.voltimeter(voltage.tag),
-                    value: voltage.value,
-                }))
-            }
-            SlavePacket::Temperature(temperature) => Some(Telemetry::Environmental(
-                EnvironmentalTelemetry::Temperature {
-                    tag: tagger.thermometer(temperature.tag),
-                    value: temperature.value,
-                },
-            )),
-            SlavePacket::RadioReport(radio) => {
-                Some(Telemetry::System(telemetry::SystemTelemetry::Radio {
-                    channel: radio.channel,
-                    rx: radio.rx,
-                    tx: radio.tx,
-                }))
-            }
-        };
 
-        let Some(telemetry) = telemetry else {
+            packets.push(packet);
+        }
+
+        if time == 0 || packets.is_empty() {
             continue;
-        };
+        }
 
-        let payload = bincode::serialize(&telemetry)?;
-
-        channel
-            .basic_publish(
-                "telemetry-exange",
-                queues::telemetry::NAME,
-                BasicPublishOptions::default(),
-                &payload,
-                BasicProperties::default(),
-            )
-            .await?;
-
-        info!("Pushed telemetry");
+        for packet in packets {
+            if let Some(telemetry) = to_telemetry(packet, &mut tagger, time) {
+                send_telemetry(&channel, telemetry).await?;
+            }
+        }
     }
 }
 
@@ -119,23 +86,63 @@ fn setup_logging() {
         .init();
 }
 
-async fn pinger(
-    mut tx: RadioSender,
-    pings: Arc<Mutex<Vec<(u8, DateTime<Utc>)>>>,
-) -> anyhow::Result<()> {
-    let mut total = 0;
-    loop {
-        info!("{total}");
-
-        tx.send(MasterPacket::Ping(radio::packets::master::Ping { id: 0 }))
-            .await?;
-
-        total += 1;
-
-        if total >= 1000 {
-            break;
+fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, time: u32) -> Option<DatedTelemetry> {
+    let mut now = Utc::now();
+    let telemetry = match packet {
+        SlavePacket::GPS(x) => {
+            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
+            Some(Telemetry::Spatial(telemetry::SpatialTelemetry {
+                latitude: x.lat,
+                longitude: x.lon,
+                velocity: x.mps,
+                satellites: x.satellites as i32,
+            }))
         }
-    }
+        SlavePacket::Temperature(x) => {
+            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
+            Some(Telemetry::Environmental(
+                telemetry::EnvironmentalTelemetry::Temperature {
+                    tag: tagger.thermometer(x.tag),
+                    value: x.value,
+                },
+            ))
+        }
+        SlavePacket::Voltage(x) => {
+            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
+            Some(Telemetry::Electrical(
+                telemetry::ElectricalTelemetry::Voltage {
+                    tag: tagger.voltimeter(x.tag),
+                    value: x.value,
+                },
+            ))
+        }
+        SlavePacket::RadioReport(x) => {
+            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
+            Some(Telemetry::System(telemetry::SystemTelemetry::Radio {
+                channel: x.channel,
+                rx: x.rx,
+                tx: x.tx,
+            }))
+        }
+        SlavePacket::EndSendWindow(_) => None,
+    }?;
 
+    Some(DatedTelemetry {
+        date: now,
+        telemetry,
+    })
+}
+
+async fn send_telemetry(channel: &Channel, telemetry: DatedTelemetry) -> anyhow::Result<()> {
+    let payload = bincode::serialize(&telemetry)?;
+    channel
+        .basic_publish(
+            queues::telemetry::exhange::NAME,
+            "",
+            BasicPublishOptions::default(),
+            &payload,
+            AMQPProperties::default(),
+        )
+        .await?;
     Ok(())
 }

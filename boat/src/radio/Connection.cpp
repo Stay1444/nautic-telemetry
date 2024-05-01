@@ -15,11 +15,12 @@ using namespace radio;
 #define READ_CHUNK_SIZE 16
 
 Packet *Connection::recv() {
-  while (RADIO_PORT.available() &&
-         this->m_BufferLength + READ_CHUNK_SIZE <= this->BUFFER_SIZE) {
-    size_t read = RADIO_PORT.readBytes(&this->m_Buffer[this->m_BufferLength],
-                                       READ_CHUNK_SIZE);
+  while (this->m_BufferLength + READ_CHUNK_SIZE <= this->BUFFER_SIZE &&
+         RADIO_PORT.available()) {
 
+    size_t read =
+        RADIO_PORT.readBytes(&this->m_Buffer[this->m_BufferLength],
+                             min(READ_CHUNK_SIZE, RADIO_PORT.available()));
     this->m_BufferLength += read;
     this->m_Rx += read;
   }
@@ -120,7 +121,7 @@ void Connection::tick() {
   this->m_Rx = 0;
   this->m_Tx = 0;
 
-  this->queue(incoming);
+  this->queue(packet);
 }
 
 void Connection::handle(Packet *packet) {
@@ -128,13 +129,22 @@ void Connection::handle(Packet *packet) {
     return;
 
   if (packet->id() == MASTER_START_SEND_WINDOW_PACKET) {
+    this->m_Logger.info("Send window started");
+    Allocator::Free(packet);
     this->flush();
-    auto end = new packets::Slave::EndSendWindow();
-    this->write(end);
+    this->write(new packets::Slave::EndSendWindow());
+    this->m_Logger.info("Send window ended");
+    RADIO_PORT.flush();
     return;
   }
 
   if (this->m_Handler != NULL) {
     this->m_Handler(packet);
+  } else {
+    Allocator::Free(packet);
   }
+}
+
+void Connection::handler(PacketCallbackFunction handler) {
+  this->m_Handler = handler;
 }
