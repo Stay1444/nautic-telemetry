@@ -8,6 +8,23 @@ void utils::arrays::copy(const uint8_t *source, uint8_t *destination,
   }
 }
 
+void utils::arrays::trimStart(uint8_t *source, size_t trimLength,
+                              size_t totalLength) {
+  if (trimLength >= totalLength) {
+    return;
+  }
+
+  size_t newSize = totalLength - trimLength;
+
+  if (newSize == 0) {
+    return;
+  }
+
+  for (size_t i = 0; i < newSize; ++i) {
+    source[i] = source[i + trimLength];
+  }
+}
+
 size_t utils::conversions::bytesToSizeT(const uint8_t *bytes) {
   size_t result = 0;
   for (size_t i = 0; i < sizeof(size_t); ++i) {
