@@ -13,10 +13,10 @@ Packet *Packet::deserialize(uint8_t *buffer, size_t bufferLength,
   bool success = true;
 
   switch (packetId) {
-  case MASTER_PING_PACKET:
-    result = new packets::Master::Ping();
-    success = result->deserialize(cursor);
-    break;
+  case MASTER_START_SEND_WINDOW_PACKET: {
+    result = new packets::Master::StartSendWindow();
+    success = true;
+  }
   }
 
   Allocator::Free(buffer);

@@ -2,7 +2,9 @@ use std::{io::Write, path::PathBuf};
 
 use byteorder::WriteBytesExt;
 use bytes::{BufMut, Bytes, BytesMut};
-use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf, WriteHalf};
+use gpio_cdev::{Line, LineHandle, LineRequestFlags};
+use packets::{MasterPacket, SlavePacket};
+use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf};
 use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 pub mod packets;
@@ -27,17 +29,29 @@ pub trait Serializable: PacketGroup {
     fn serialize(&self) -> anyhow::Result<PacketFrame>;
 }
 
-pub async fn open(tty: PathBuf, baud: u32) -> anyhow::Result<(RadioReceiver, RadioSender)> {
-    let port = tokio_serial::new(tty.to_string_lossy(), baud).open_native_async()?;
+pub async fn open(
+    tty: String,
+    baud: u32,
+    gpio_chip: String,
+    gpio_pin: u32,
+) -> anyhow::Result<Radio> {
+    let port = tokio_serial::new(tty, baud).open_native_async()?;
 
-    let (read, write) = tokio::io::split(port);
+    let mut chip = gpio_cdev::Chip::new(gpio_chip)?;
+    let line = chip
+        .get_line(gpio_pin)?
+        .request(LineRequestFlags::OUTPUT, 1, "opi-radio-set")?;
 
-    Ok((RadioReceiver(read), RadioSender(write)))
+    Ok(Radio { port, line })
 }
 
-pub struct RadioSender(WriteHalf<SerialStream>);
-impl RadioSender {
-    pub async fn send(&mut self, packet: impl Serializable) -> anyhow::Result<()> {
+pub struct Radio {
+    port: SerialStream,
+    line: LineHandle,
+}
+
+impl Radio {
+    pub async fn write(&mut self, packet: MasterPacket) -> anyhow::Result<()> {
         let frame = packet.serialize()?;
 
         let mut packet = BytesMut::new().writer();
@@ -47,31 +61,25 @@ impl RadioSender {
         packet.write_u32::<Endianness>(frame.data.len() as u32)?;
         packet.write_all(&frame.data)?;
 
-        let packet = packet.into_inner();
+        let mut packet = packet.into_inner();
 
-        self.0.write_all(&packet).await?;
+        self.port.write_all_buf(&mut packet).await?;
 
         Ok(())
     }
-}
 
-pub struct RadioReceiver(ReadHalf<SerialStream>);
-impl RadioReceiver {
-    pub async fn recv<T>(&mut self) -> anyhow::Result<T>
-    where
-        T: Deserializable,
-    {
-        while self.0.read_u8().await? != PACKET_HEAD {
+    pub async fn read(&mut self) -> anyhow::Result<SlavePacket> {
+        while self.port.read_u8().await? != PACKET_HEAD {
             continue;
         }
 
-        let id = self.0.read_u8().await?;
-        let length = self.0.read_u32().await?; // read_u32 reads in big endian. Use read_u32_le if
-                                               // little-endianness is needed.
+        let id = self.port.read_u8().await?;
+        let length = self.port.read_u32().await?; // read_u32 reads in big endian. Use read_u32_le if
+                                                  // little-endianness is needed.
         let mut data = vec![];
 
         while data.len() < length as usize {
-            data.push(self.0.read_u8().await?);
+            data.push(self.port.read_u8().await?);
         }
 
         let frame = PacketFrame {
@@ -79,7 +87,7 @@ impl RadioReceiver {
             data: Bytes::from(data),
         };
 
-        let packet = T::deserialize(frame)?;
+        let packet = SlavePacket::deserialize(frame)?;
 
         Ok(packet)
     }

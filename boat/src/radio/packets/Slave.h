@@ -4,27 +4,19 @@
 
 namespace radio::packets::Slave {
 
-#define SLAVE_PONG_PACKET 0
+#define SLAVE_END_SEND_WINDOW_PACKET 0
 #define SLAVE_GPS_PACKET 1
 #define SLAVE_TEMPERATURE_PACKET 2
 #define SLAVE_VOLTAGE_PACKET 3
 #define SLAVE_RADIO_REPORT_PACKET 4
 
-class Pong : public Packet {
+class EndSendWindow : public Packet {
 public:
-  uint8_t id() override { return SLAVE_PONG_PACKET; }
-
-  uint8_t value = 0;
+  uint8_t id() override { return SLAVE_END_SEND_WINDOW_PACKET; }
 
   PacketFrame serialize() override {
     PacketFrame frame = {0};
     frame.id = this->id();
-
-    Writer writer = Writer::create();
-
-    writer.write(value);
-
-    frame.writer = writer;
     return frame;
   }
 };

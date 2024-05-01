@@ -17,6 +17,7 @@ void Writer::free() {
 }
 size_t Writer::length() { return this->m_Position; }
 size_t Writer::capacity() { return this->m_Capacity; }
+bool Writer::initialized() { return this->m_Initialized; }
 
 void Writer::reserve(size_t size) {
   if (!this->m_Initialized) {

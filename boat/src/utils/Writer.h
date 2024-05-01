@@ -1,3 +1,4 @@
+#pragma once
 #include <Arduino.h>
 
 class Writer {
@@ -8,6 +9,7 @@ public:
 
   static Writer create();
   void free();
+  bool initialized();
 
   void write(uint8_t value);
   void write(uint32_t value);

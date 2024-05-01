@@ -29,8 +29,3 @@ chrono.workspace = true
 queues.path = "../../libs/queues/"
 telemetry.path = "../../libs/telemetry/"
 radio.path = "../../libs/radio/"
-gpio-cdev = { version = "0.6.0", features = [
-  "tokio",
-  "async-tokio",
-  "futures",
-] }

@@ -4,21 +4,6 @@ use bytes::{Buf, Bytes};
 use crate::Endianness;
 
 #[derive(Clone, Debug)]
-pub struct Pong {
-    pub id: u8,
-}
-
-impl Pong {
-    pub fn deserialize(data: Bytes) -> anyhow::Result<Self> {
-        let mut reader = data.reader();
-
-        Ok(Self {
-            id: reader.read_u8()?,
-        })
-    }
-}
-
-#[derive(Clone, Debug)]
 pub struct GPS {
     pub satellites: u8,
     pub mps: f32,

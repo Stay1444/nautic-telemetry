@@ -7,7 +7,7 @@
 
 class Thermistor : public MetricTask {
 public:
-  Thermistor(uint8_t pin, uint8_t tag) {
+  Thermistor(uint8_t pin, uint8_t tag) : m_Logger("Thermistor") {
     this->m_Pin = pin;
     m_Timer.begin(500);
   }
@@ -19,4 +19,5 @@ private:
   uint8_t m_Pin = 0;
   uint8_t m_Tag = 0;
   FireTimer m_Timer;
+  Logger m_Logger;
 };

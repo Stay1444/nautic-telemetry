@@ -3032,7 +3032,6 @@ dependencies = [
  "clap",
  "dotenv",
  "futures",
- "gpio-cdev",
  "lapin",
  "queues",
  "radio",
@@ -3463,6 +3462,7 @@ dependencies = [
  "async-trait",
  "byteorder",
  "bytes",
+ "gpio-cdev",
  "tokio",
  "tokio-serial",
 ]

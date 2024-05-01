@@ -8,6 +8,12 @@ void utils::arrays::copy(const uint8_t *source, uint8_t *destination,
   }
 }
 
+void utils::arrays::copy(void **source, void **destination, size_t length) {
+  for (size_t i = 0; i < length; i++) {
+    destination[i] = const_cast<void *>(source[i]);
+  }
+}
+
 void utils::arrays::trimStart(uint8_t *source, size_t trimLength,
                               size_t totalLength) {
   if (trimLength >= totalLength) {

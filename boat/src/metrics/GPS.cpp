@@ -20,6 +20,8 @@ void GPS::tick(radio::Connection &radio) {
     packet->lon = this->m_Gps.location.lng();
     packet->mps = (float)this->m_Gps.speed.mps();
 
-    radio.send(packet);
+    radio.queue(packet);
+
+    this->m_Logger.info("GPS sent information");
   }
 }

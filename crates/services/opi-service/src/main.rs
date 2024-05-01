@@ -27,10 +27,7 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Starting");
 
-    let (mut rx, tx) = radio::open(config.tty.into(), config.baud).await?;
-    let pending_pings = Arc::new(Mutex::new(Vec::<(u8, DateTime<Utc>)>::new()));
-
-    tokio::spawn(pinger(tx, pending_pings.clone()));
+    let mut radio = radio::open(config.tty, config.baud, config.gpio_chip, config.gpio_pin).await?;
 
     let connection =
         lapin::Connection::connect(&config.amqp_addr, ConnectionProperties::default()).await?;
@@ -39,7 +36,8 @@ async fn main() -> anyhow::Result<()> {
 
     queues::telemetry(&channel).await?;
 
-    while let Ok(packet) = rx.recv::<SlavePacket>().await {
+    loop {
+        let packet = rx.recv::<SlavePacket>().await.unwrap();
         let telemetry = match packet {
             SlavePacket::Pong(pong) => {
                 let mut lock = pending_pings.lock().await;
@@ -106,8 +104,6 @@ async fn main() -> anyhow::Result<()> {
 
         info!("Pushed telemetry");
     }
-
-    Ok(())
 }
 
 fn setup_logging() {
@@ -127,21 +123,19 @@ async fn pinger(
     mut tx: RadioSender,
     pings: Arc<Mutex<Vec<(u8, DateTime<Utc>)>>>,
 ) -> anyhow::Result<()> {
-    let mut id = 0;
+    let mut total = 0;
     loop {
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        info!("{total}");
 
-        info!("Sent ping {id}");
-
-        tx.send(MasterPacket::Ping(radio::packets::master::Ping { id }))
+        tx.send(MasterPacket::Ping(radio::packets::master::Ping { id: 0 }))
             .await?;
 
-        pings.lock().await.push((id, Utc::now()));
+        total += 1;
 
-        id += 1;
-
-        if id >= u8::MAX {
-            id = 0;
+        if total >= 1000 {
+            break;
         }
     }
+
+    Ok(())
 }

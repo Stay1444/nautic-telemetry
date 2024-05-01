@@ -13,3 +13,9 @@ tokio-serial = "5.4.4"
 anyhow.workspace = true
 async-trait.workspace = true
 tokio.workspace = true
+
+gpio-cdev = { version = "0.6.0", features = [
+  "tokio",
+  "async-tokio",
+  "futures",
+] }

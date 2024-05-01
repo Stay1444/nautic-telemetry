@@ -8,13 +8,13 @@ pub mod slave;
 
 #[derive(Clone, Debug)]
 pub enum MasterPacket {
-    Ping(master::Ping),
+    StartSendWindow,
     ChangeChannel(master::ChangeChannel),
 }
 
 #[derive(Clone, Debug)]
 pub enum SlavePacket {
-    Pong(slave::Pong),
+    EndSendWindow,
     GPS(slave::GPS),
     Temperature(slave::Temperature),
     Voltage(slave::Voltage),
@@ -24,7 +24,7 @@ pub enum SlavePacket {
 impl PacketGroup for MasterPacket {
     fn id(&self) -> u8 {
         match self {
-            Self::Ping(_) => 0,
+            Self::StartSendWindow => 0,
             Self::ChangeChannel(_) => 1,
         }
     }
@@ -35,7 +35,7 @@ impl Serializable for MasterPacket {
         let mut writer = BytesMut::new().writer();
 
         match self {
-            Self::Ping(p) => p.serialize(&mut writer)?,
+            Self::StartSendWindow => (),
             Self::ChangeChannel(p) => p.serialize(&mut writer)?,
         }
 
@@ -51,7 +51,7 @@ impl Serializable for MasterPacket {
 impl PacketGroup for SlavePacket {
     fn id(&self) -> u8 {
         match self {
-            Self::Pong(_) => 0,
+            Self::EndSendWindow => 0,
             Self::GPS(_) => 1,
             Self::Temperature(_) => 2,
             Self::Voltage(_) => 3,
@@ -63,7 +63,7 @@ impl PacketGroup for SlavePacket {
 impl Deserializable for SlavePacket {
     fn deserialize(frame: super::PacketFrame) -> anyhow::Result<Self> {
         Ok(match frame.id {
-            0 => Self::Pong(slave::Pong::deserialize(frame.data)?),
+            0 => Self::EndSendWindow,
             1 => Self::GPS(slave::GPS::deserialize(frame.data)?),
             2 => Self::Temperature(slave::Temperature::deserialize(frame.data)?),
             3 => Self::Voltage(slave::Voltage::deserialize(frame.data)?),

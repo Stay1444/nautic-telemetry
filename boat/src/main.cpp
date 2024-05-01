@@ -12,32 +12,16 @@ static Logger logger("main");
 
 static MetricTask *tasks[2] = {new Thermistor(A1, 0), new GPS(8, 7)};
 
-using namespace radio;
+void handlePacket(radio::Packet *packet) { free(packet); }
 
 void setup() {
   Serial.begin(9600); // Serial port to computer
-
-  delay(1000);
+  connection.handler(handlePacket);
   logger.info("Ready");
 }
 
 void loop() {
   connection.tick();
-
-  radio::Packet *packet = connection.recv();
-
-  if (packet != NULL) {
-    if (packet->id() == MASTER_PING_PACKET) {
-      packets::Master::Ping *ping = (packets::Master::Ping *)packet;
-      packets::Slave::Pong *pong = new packets::Slave::Pong();
-      logger.info("Got ping request");
-      Serial.print("Ping request id: ");
-      Serial.println(ping->value);
-      pong->value = ping->value;
-      free(ping);
-      connection.send(pong);
-    }
-  }
 
   int tasksLength = sizeof(tasks) / sizeof(tasks[0]);
 

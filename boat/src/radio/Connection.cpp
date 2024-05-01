@@ -5,6 +5,7 @@
 #include "Connection.h"
 #include "PacketDeserializer.h"
 #include "Protocol.h"
+#include "packets/Master.h"
 #include "packets/Slave.h"
 #include "radio/Packet.h"
 #include "utils/Allocator.h"
@@ -62,19 +63,37 @@ Packet *Connection::recv() {
   return NULL;
 }
 
-void Connection::send(Packet *packet) {
-  PacketFrame frame = packet->serialize();
+void Connection::queue(Packet *packet, bool optional) {
+  if (this->m_PendingPackets.length() > 32 && optional) {
+    free(packet);
+    return;
+  }
+  this->m_PendingPackets.push((void *)packet);
+}
 
+void Connection::flush() {
+  Packet *packet;
+  while ((packet = (Packet *)this->m_PendingPackets.pop()) != NULL) {
+    this->write(packet);
+  }
+}
+
+void Connection::write(Packet *packet) {
+  PacketFrame frame = packet->serialize();
   free(packet);
 
   Writer writer = Writer::create();
 
   writer.write((uint8_t)PACKET_HEAD_BYTE);
   writer.write(frame.id);
-  writer.write((uint32_t)frame.writer.length());
-  writer.write(frame.writer.raw(), frame.writer.length());
+  if (frame.writer.initialized()) {
+    writer.write((uint32_t)frame.writer.length());
+    writer.write(frame.writer.raw(), frame.writer.length());
 
-  frame.writer.free();
+    frame.writer.free();
+  } else {
+    writer.write((uint32_t)0);
+  }
 
   this->m_Tx += writer.length();
 
@@ -84,6 +103,11 @@ void Connection::send(Packet *packet) {
 }
 
 void Connection::tick() {
+  Packet *incoming = NULL;
+  while ((incoming = this->recv()) != NULL) {
+    handle(incoming);
+  }
+
   if (!this->m_StatisticsTimer.fire())
     return;
 
@@ -96,5 +120,21 @@ void Connection::tick() {
   this->m_Rx = 0;
   this->m_Tx = 0;
 
-  this->send(packet);
+  this->queue(incoming);
+}
+
+void Connection::handle(Packet *packet) {
+  if (packet == NULL)
+    return;
+
+  if (packet->id() == MASTER_START_SEND_WINDOW_PACKET) {
+    this->flush();
+    auto end = new packets::Slave::EndSendWindow();
+    this->write(end);
+    return;
+  }
+
+  if (this->m_Handler != NULL) {
+    this->m_Handler(packet);
+  }
 }

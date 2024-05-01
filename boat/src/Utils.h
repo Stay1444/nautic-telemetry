@@ -6,6 +6,7 @@
 namespace utils {
 namespace arrays {
 void copy(const uint8_t *source, uint8_t *destination, size_t length);
+void copy(void **source, void **destination, size_t length);
 void trimStart(uint8_t *source, size_t trimLength, size_t totalLength);
 } // namespace arrays
 namespace conversions {
