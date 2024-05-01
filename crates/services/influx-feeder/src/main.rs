@@ -53,8 +53,8 @@ async fn main() -> anyhow::Result<()> {
 
     channel
         .exchange_bind(
-            queues::telemetry::exchange::NAME,
             &queue_name,
+            queues::telemetry::exchange::NAME,
             "",
             ExchangeBindOptions::default(),
             FieldTable::default(),
