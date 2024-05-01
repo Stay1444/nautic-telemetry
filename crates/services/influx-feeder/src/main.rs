@@ -29,7 +29,10 @@ async fn main() -> anyhow::Result<()> {
 
     let channel = connection.create_channel().await?;
 
-    let queue_name = uuid::Uuid::new_v4().to_string();
+    let queue_name = format!(
+        "influx-feeder,{}",
+        uuid::Uuid::new_v4().simple().to_string()
+    );
 
     info!("Declaring exchange");
 
