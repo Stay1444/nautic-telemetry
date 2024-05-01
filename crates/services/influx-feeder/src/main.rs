@@ -31,7 +31,11 @@ async fn main() -> anyhow::Result<()> {
 
     let queue_name = uuid::Uuid::new_v4().to_string();
 
+    info!("Declaring exchange");
+
     queues::telemetry::exchange::declare(&channel).await?;
+
+    info!("Declaring queue {queue_name}");
 
     channel
         .queue_declare(
@@ -40,6 +44,12 @@ async fn main() -> anyhow::Result<()> {
             queues::telemetry::arguments(),
         )
         .await?;
+
+    info!(
+        "Binding exchange {} => {}",
+        queues::telemetry::exchange::NAME,
+        queue_name
+    );
 
     channel
         .exchange_bind(
@@ -51,6 +61,8 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
 
+    info!("Creating consumer...");
+
     let mut consumer = channel
         .basic_consume(
             &queue_name,
@@ -60,7 +72,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .await?;
 
-    info!("Ok");
+    info!("Ready");
 
     while let Some(delivery) = consumer.next().await {
         let Ok(delivery) = delivery else {
