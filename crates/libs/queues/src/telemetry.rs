@@ -1,14 +1,14 @@
 use lapin::{options::QueueDeclareOptions, types::FieldTable};
 
 pub fn options() -> QueueDeclareOptions {
-    QueueDeclareOptions::default()
+    QueueDeclareOptions {
+        auto_delete: true,
+        ..Default::default()
+    }
 }
 
 pub fn arguments() -> FieldTable {
-    let mut table = FieldTable::default();
-
-    table.insert("x-auto-delete".into(), true.into());
-    table
+    FieldTable::default()
 }
 
 pub mod exhange {
