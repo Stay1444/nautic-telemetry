@@ -11,10 +11,10 @@ pub fn arguments() -> FieldTable {
     FieldTable::default()
 }
 
-pub mod exhange {
+pub mod exchange {
     use lapin::{options::ExchangeDeclareOptions, types::FieldTable, Channel, ExchangeKind};
 
-    pub const NAME: &str = "telemetry-exange";
+    pub const NAME: &str = "telemetry-exchange";
     pub const KIND: lapin::ExchangeKind = ExchangeKind::Fanout;
 
     pub fn options() -> ExchangeDeclareOptions {

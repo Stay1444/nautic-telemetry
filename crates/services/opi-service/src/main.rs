@@ -32,7 +32,7 @@ async fn main() -> anyhow::Result<()> {
 
     let channel = connection.create_channel().await?;
 
-    queues::telemetry::exhange::declare(&channel).await?;
+    queues::telemetry::exchange::declare(&channel).await?;
 
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -137,7 +137,7 @@ async fn send_telemetry(channel: &Channel, telemetry: DatedTelemetry) -> anyhow:
     let payload = bincode::serialize(&telemetry)?;
     channel
         .basic_publish(
-            queues::telemetry::exhange::NAME,
+            queues::telemetry::exchange::NAME,
             "",
             BasicPublishOptions::default(),
             &payload,

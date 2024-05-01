@@ -29,9 +29,9 @@ async fn main() -> anyhow::Result<()> {
 
     let channel = connection.create_channel().await?;
 
-    queues::telemetry::exhange::declare(&channel).await?;
-
     let queue_name = uuid::Uuid::new_v4().to_string();
+
+    queues::telemetry::exchange::declare(&channel).await?;
 
     channel
         .queue_declare(
@@ -43,8 +43,8 @@ async fn main() -> anyhow::Result<()> {
 
     channel
         .exchange_bind(
+            queues::telemetry::exchange::NAME,
             &queue_name,
-            queues::telemetry::exhange::NAME,
             "",
             ExchangeBindOptions::default(),
             FieldTable::default(),
