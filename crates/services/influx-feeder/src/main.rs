@@ -52,12 +52,12 @@ async fn main() -> anyhow::Result<()> {
     );
 
     channel
-        .exchange_bind(
+        .queue_bind(
             &queue_name,
             queues::telemetry::exchange::NAME,
             "",
-            ExchangeBindOptions::default(),
-            FieldTable::default(),
+            Default::default(),
+            Default::default(),
         )
         .await?;
 
