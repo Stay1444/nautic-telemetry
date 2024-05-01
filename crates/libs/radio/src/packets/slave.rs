@@ -10,6 +10,7 @@ pub struct GPS {
     pub mps: f32,
     pub lat: f64,
     pub lon: f64,
+    pub altitude: f64,
 }
 
 impl GPS {
@@ -22,6 +23,7 @@ impl GPS {
             mps: reader.read_f32::<Endianness>()?,
             lat: reader.read_f64::<Endianness>()?,
             lon: reader.read_f64::<Endianness>()?,
+            altitude: reader.read_f64::<Endianness>()?,
         })
     }
 }

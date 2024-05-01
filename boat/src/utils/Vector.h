@@ -13,6 +13,8 @@ public:
   size_t length();
   size_t capacity();
 
+  void clear();
+
 private:
   size_t m_Length = 0;
   size_t m_Capacity = 0;

@@ -103,6 +103,7 @@ async fn main() -> anyhow::Result<()> {
             .add_field("lat", spatial.latitude)
             .add_field("lon", spatial.longitude)
             .add_field("velocity", spatial.velocity)
+            .add_field("altitude", spatial.altitude)
             .add_field("satellites", spatial.satellites),
             Telemetry::Electrical(x) => match x {
                 telemetry::ElectricalTelemetry::Amps { tag, value } => WriteQuery::new(

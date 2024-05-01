@@ -34,6 +34,7 @@ pub struct SpatialTelemetry {
     pub longitude: f64,
     pub velocity: f32,
     pub satellites: i32,
+    pub altitude: f64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

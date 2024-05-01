@@ -7,7 +7,7 @@ use lapin::{
 };
 use radio::packets::{MasterPacket, SlavePacket};
 use telemetry::{DatedTelemetry, Telemetry};
-use tracing::info;
+use tracing::{error, info};
 
 use crate::tagger::Tagger;
 
@@ -45,9 +45,13 @@ async fn main() -> anyhow::Result<()> {
         loop {
             let packet = tokio::select! {
                 packet = radio.read() => {
+                    if let Err(err) = packet {
+                        error!("Error reading packet: {err}");
+                        break;
+                    }
                     packet?
                 }
-                _ = tokio::time::sleep(Duration::from_millis(100)) => {
+                _ = tokio::time::sleep(Duration::from_millis(1000)) => {
                     break
                 }
             };
@@ -96,6 +100,7 @@ fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, time: u32) -> Option<D
                 longitude: x.lon,
                 velocity: x.mps,
                 satellites: x.satellites as i32,
+                altitude: x.altitude,
             }))
         }
         SlavePacket::Temperature(x) => {

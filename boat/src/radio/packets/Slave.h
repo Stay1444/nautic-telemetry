@@ -19,6 +19,7 @@ public:
     frame.id = this->id();
     Writer writer = Writer::create();
     writer.write((uint32_t)millis());
+    frame.writer = writer;
     return frame;
   }
 };
@@ -32,6 +33,7 @@ public:
   float mps = 0.0;
   double lat = 0.0;
   double lon = 0.0;
+  double altitude = 0.0;
 
   PacketFrame serialize() override {
     PacketFrame frame = {0};
@@ -44,6 +46,7 @@ public:
     writer.write(this->mps);
     writer.write(this->lat);
     writer.write(this->lon);
+    writer.write(this->altitude);
 
     frame.writer = writer;
     return frame;

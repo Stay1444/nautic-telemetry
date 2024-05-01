@@ -9,12 +9,25 @@ Vector::Vector() {
 }
 
 Vector::~Vector() {
+  if (this->m_Slice == NULL)
+    return;
   this->m_Capacity = 0;
   Allocator::Free(this->m_Slice);
+  this->m_Slice = NULL;
 }
 
 size_t Vector::length() { return this->m_Length; }
 size_t Vector::capacity() { return this->m_Capacity; }
+
+void Vector::clear() {
+  if (this->m_Slice == NULL)
+    return;
+  Allocator::Free(this->m_Slice);
+  this->m_Length = 0;
+  this->m_Capacity = 4;
+  this->m_Slice = static_cast<void **>(
+      Allocator::Malloc(this->m_Capacity * sizeof(void *)));
+}
 
 void Vector::extend() {
   void **old = this->m_Slice;

@@ -12,13 +12,17 @@ void GPS::tick(radio::Connection &radio) {
   bool speedUpdated =
       this->m_Gps.speed.isUpdated() && this->m_Gps.speed.isValid();
 
-  if (locationUpdated || speedUpdated) {
+  bool satellitesUpdated =
+      this->m_Gps.satellites.isUpdated() && this->m_Gps.satellites.isValid();
+
+  if (locationUpdated || speedUpdated || satellitesUpdated) {
     auto packet = new radio::packets::Slave::GPS();
 
     packet->satellites = (uint8_t)this->m_Gps.satellites.value();
     packet->lat = this->m_Gps.location.lat();
     packet->lon = this->m_Gps.location.lng();
     packet->mps = (float)this->m_Gps.speed.mps();
+    packet->altitude = this->m_Gps.altitude.meters();
 
     radio.queue(packet);
 

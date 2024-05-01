@@ -66,7 +66,7 @@ Packet *Connection::recv() {
 
 void Connection::queue(Packet *packet, bool optional) {
   if (this->m_PendingPackets.length() > 32 && optional) {
-    free(packet);
+    Allocator::Free(packet);
     return;
   }
   this->m_PendingPackets.push((void *)packet);
@@ -74,9 +74,15 @@ void Connection::queue(Packet *packet, bool optional) {
 
 void Connection::flush() {
   Packet *packet;
+  size_t count = this->m_PendingPackets.length();
   while ((packet = (Packet *)this->m_PendingPackets.pop()) != NULL) {
     this->write(packet);
   }
+  Serial.print("Written ");
+  Serial.print(count);
+  Serial.println(" packets");
+
+  this->m_PendingPackets.clear(); // Also resets capacity
 }
 
 void Connection::write(Packet *packet) {
