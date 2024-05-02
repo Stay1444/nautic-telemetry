@@ -27,10 +27,12 @@ public:
   }
   ~Connection() { Allocator::Free(m_Buffer); }
 
-  static const size_t BUFFER_SIZE = 512;
+  static const size_t BUFFER_SIZE = 256;
   void queue(Packet *packet, bool optional = true);
   void handler(PacketCallbackFunction handler);
   void tick();
+  String *at(const char *command);
+  String *at(String &command);
 
 private:
   Packet *recv();

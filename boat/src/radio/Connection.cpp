@@ -65,7 +65,7 @@ Packet *Connection::recv() {
 }
 
 void Connection::queue(Packet *packet, bool optional) {
-  if (this->m_PendingPackets.length() > 32 && optional) {
+  if (this->m_PendingPackets.length() > 8 && optional) {
     Allocator::Free(packet);
     return;
   }
@@ -153,4 +153,41 @@ void Connection::handle(Packet *packet) {
 
 void Connection::handler(PacketCallbackFunction handler) {
   this->m_Handler = handler;
+}
+
+String *Connection::at(String &command) { return this->at(command.c_str()); }
+
+String *Connection::at(const char *command) {
+  digitalWrite(RADIO_MODE_PORT, LOW);
+
+  delay(80);
+
+  RADIO_PORT.print(command);
+  RADIO_PORT.println();
+  RADIO_PORT.flush();
+
+  String *response = new String();
+
+  uint32_t start = millis();
+
+  while (!response->endsWith("\r\n")) {
+    if (!RADIO_PORT.available())
+      continue;
+
+    if (millis() - start > 500) {
+      free(response);
+      digitalWrite(RADIO_MODE_PORT, HIGH);
+      this->m_Logger.error("Timed out while waiting for AT command response.");
+      return NULL;
+    }
+
+    char read = RADIO_PORT.read();
+    response->concat(read);
+  }
+
+  digitalWrite(RADIO_MODE_PORT, HIGH);
+
+  delay(80);
+
+  return response;
 }
