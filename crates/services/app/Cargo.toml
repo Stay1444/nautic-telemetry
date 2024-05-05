@@ -19,5 +19,10 @@ futures.workspace = true
 lapin.workspace = true
 anyhow.workspace = true
 
+serde.workspace = true
+serde_json.workspace = true
+
 telemetry.path = "../../libs/telemetry/"
 queues.path = "../../libs/queues/"
+iced_aw = { version = "0.8.0", features = ["number_input", "modal"] }
+strum = { version = "0.26.2", features = ["derive"] }
