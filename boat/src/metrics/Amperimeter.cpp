@@ -9,7 +9,12 @@ void Amperimeter::tick(radio::Connection &radio) {
   auto packet = new radio::packets::Slave::Amperimeter();
 
   packet->tag = this->m_Tag;
-  packet->value = Amperimeter::read(this->m_Pin);
+  float amps = Amperimeter::read(this->m_Pin);
+  if (this->m_Invert) {
+    amps *= -1;
+  }
+
+  packet->value = amps;
 
   radio.queue(packet);
 }

@@ -7,15 +7,17 @@
 
 class RelayDriver : public MetricTask {
 public:
-  RelayDriver(uint8_t relayPin, uint8_t thermistorPin, float threshold,
-              bool invert);
+  RelayDriver(uint8_t relayPin, uint8_t voltimeterPin, float openThreshold,
+              float choseThreshold, bool invert);
 
   void tick(radio::Connection &radio);
 
 private:
   FireTimer m_Timer;
   uint8_t m_RelayPin;
-  uint8_t m_ThermistorPin;
-  float m_Threshold;
+  uint8_t m_VoltimeterPin;
+  float m_OpenThreshold;
+  float m_CloseThreshold;
   bool m_Invert;
+  bool m_Open = false;
 };

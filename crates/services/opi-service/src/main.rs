@@ -90,56 +90,41 @@ fn setup_logging() {
         .init();
 }
 
-fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, time: u32) -> Option<DatedTelemetry> {
-    let mut now = Utc::now();
+fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, _time: u32) -> Option<DatedTelemetry> {
+    let now = Utc::now();
     info!("Transaforming packet to telemetry!");
     dbg!(&packet);
     let telemetry = match packet {
-        SlavePacket::GPS(x) => {
-            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
-            Some(Telemetry::Spatial(telemetry::SpatialTelemetry {
-                latitude: x.lat,
-                longitude: x.lon,
-                velocity: x.mps,
-                satellites: x.satellites as i32,
-                altitude: x.altitude,
-            }))
-        }
-        SlavePacket::Temperature(x) => {
-            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
-            Some(Telemetry::Environmental(
-                telemetry::EnvironmentalTelemetry::Temperature {
-                    tag: tagger.thermometer(x.tag),
-                    value: x.value,
-                },
-            ))
-        }
-        SlavePacket::Voltage(x) => {
-            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
-            Some(Telemetry::Electrical(
-                telemetry::ElectricalTelemetry::Voltage {
-                    tag: tagger.voltimeter(x.tag),
-                    value: x.value,
-                },
-            ))
-        }
-        SlavePacket::Amps(x) => {
-            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
-            Some(Telemetry::Electrical(
-                telemetry::ElectricalTelemetry::Amps {
-                    tag: tagger.amperimeter(x.tag),
-                    value: x.value,
-                },
-            ))
-        }
-        SlavePacket::RadioReport(x) => {
-            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
-            Some(Telemetry::System(telemetry::SystemTelemetry::Radio {
-                channel: x.channel,
-                rx: x.rx,
-                tx: x.tx,
-            }))
-        }
+        SlavePacket::GPS(x) => Some(Telemetry::Spatial(telemetry::SpatialTelemetry {
+            latitude: x.lat,
+            longitude: x.lon,
+            velocity: x.mps,
+            satellites: x.satellites as i32,
+            altitude: x.altitude,
+        })),
+        SlavePacket::Temperature(x) => Some(Telemetry::Environmental(
+            telemetry::EnvironmentalTelemetry::Temperature {
+                tag: tagger.thermometer(x.tag),
+                value: x.value,
+            },
+        )),
+        SlavePacket::Voltage(x) => Some(Telemetry::Electrical(
+            telemetry::ElectricalTelemetry::Voltage {
+                tag: tagger.voltimeter(x.tag),
+                value: x.value,
+            },
+        )),
+        SlavePacket::Amps(x) => Some(Telemetry::Electrical(
+            telemetry::ElectricalTelemetry::Amps {
+                tag: tagger.amperimeter(x.tag),
+                value: x.value,
+            },
+        )),
+        SlavePacket::RadioReport(x) => Some(Telemetry::System(telemetry::SystemTelemetry::Radio {
+            channel: x.channel,
+            rx: x.rx,
+            tx: x.tx,
+        })),
         SlavePacket::EndSendWindow(_) => None,
     }?;
 
