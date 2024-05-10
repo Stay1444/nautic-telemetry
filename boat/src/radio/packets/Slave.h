@@ -9,6 +9,7 @@ namespace radio::packets::Slave {
 #define SLAVE_TEMPERATURE_PACKET 2
 #define SLAVE_VOLTAGE_PACKET 3
 #define SLAVE_RADIO_REPORT_PACKET 4
+#define SLAVE_AMPS_PACKET 5
 
 class EndSendWindow : public Packet {
 public:
@@ -93,6 +94,27 @@ public:
     writer.write(this->timestamp);
     writer.write(this->tag);
     writer.write(this->voltage);
+
+    frame.writer = writer;
+    return frame;
+  }
+};
+
+class Amperimeter : public Packet {
+public:
+  uint8_t id() override { return SLAVE_AMPS_PACKET; }
+  uint32_t timestamp = millis();
+  uint8_t tag;
+  float value = 0.0;
+
+  PacketFrame serialize() override {
+    PacketFrame frame = {0};
+    frame.id = this->id();
+
+    Writer writer = Writer::create();
+    writer.write(this->timestamp);
+    writer.write(this->tag);
+    writer.write(this->value);
 
     frame.writer = writer;
     return frame;

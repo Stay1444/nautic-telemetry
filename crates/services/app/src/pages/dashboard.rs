@@ -1,4 +1,4 @@
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use strum::IntoEnumIterator;
 
@@ -10,9 +10,24 @@ use iced::{
 
 use super::PageAction;
 
+#[derive(Debug, Default, Clone)]
+struct DashboardState {
+    radio: RadioState,
+}
+
+#[derive(Debug, Default, Clone)]
+struct RadioState {
+    channel: u8,
+    rx: u32,
+    tx: u32,
+    total_tx: u32,
+    total_rx: u32,
+}
+
 #[derive(Clone, Debug)]
 pub struct DashboardPage {
     connection: Arc<lapin::Connection>,
+    state: DashboardState,
     layer: Layer,
 }
 
@@ -21,6 +36,7 @@ impl DashboardPage {
         Self {
             connection: Arc::new(connection),
             layer: Layer::Inicio,
+            state: Default::default(),
         }
     }
 
@@ -51,7 +67,14 @@ impl DashboardPage {
             })
             .width(Length::Shrink)
             .height(Length::Fill),
-            column![]
+            column![match self.layer {
+                Layer::Radio => {
+                    Container::new(Text::new("Radio")).padding(10.0)
+                }
+                _ => Container::new(Text::new("TODO")),
+            }]
+            .width(Length::Fill)
+            .height(Length::Fill)
         ]
         .into()
     }

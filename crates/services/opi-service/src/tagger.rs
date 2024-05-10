@@ -7,6 +7,7 @@ const FILE_NAME: &str = "tags.yml";
 #[derive(Deserialize, Serialize, Default)]
 pub struct Tagger {
     voltimeters: HashMap<u8, String>,
+    amperimeters: HashMap<u8, String>,
     thermometers: HashMap<u8, String>,
 }
 
@@ -34,6 +35,18 @@ impl Tagger {
         self.save();
 
         self.voltimeter(id)
+    }
+
+    pub fn amperimeter(&mut self, id: u8) -> String {
+        if let Some(tag) = self.amperimeters.get(&id) {
+            return tag.clone();
+        };
+
+        self.amperimeters.insert(id, format!("Voltimeter {id}"));
+
+        self.save();
+
+        self.amperimeter(id)
     }
 
     pub fn thermometer(&mut self, id: u8) -> String {

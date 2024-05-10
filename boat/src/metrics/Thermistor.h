@@ -12,7 +12,7 @@ public:
     m_Timer.begin(1000);
   }
 
-  float celsius();
+  static float celsius(uint8_t pin);
   void tick(radio::Connection &radio) override;
 
 private:

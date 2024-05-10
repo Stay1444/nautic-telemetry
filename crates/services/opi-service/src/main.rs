@@ -92,6 +92,8 @@ fn setup_logging() {
 
 fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, time: u32) -> Option<DatedTelemetry> {
     let mut now = Utc::now();
+    info!("Transaforming packet to telemetry!");
+    dbg!(&packet);
     let telemetry = match packet {
         SlavePacket::GPS(x) => {
             now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
@@ -117,6 +119,15 @@ fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, time: u32) -> Option<D
             Some(Telemetry::Electrical(
                 telemetry::ElectricalTelemetry::Voltage {
                     tag: tagger.voltimeter(x.tag),
+                    value: x.value,
+                },
+            ))
+        }
+        SlavePacket::Amps(x) => {
+            now -= TimeDelta::milliseconds((time - x.timestamp) as i64);
+            Some(Telemetry::Electrical(
+                telemetry::ElectricalTelemetry::Amps {
+                    tag: tagger.amperimeter(x.tag),
                     value: x.value,
                 },
             ))

@@ -160,7 +160,7 @@ String *Connection::at(String &command) { return this->at(command.c_str()); }
 String *Connection::at(const char *command) {
   digitalWrite(RADIO_MODE_PORT, LOW);
 
-  delay(80);
+  delay(120);
 
   RADIO_PORT.print(command);
   RADIO_PORT.println();
@@ -187,7 +187,7 @@ String *Connection::at(const char *command) {
 
   digitalWrite(RADIO_MODE_PORT, HIGH);
 
-  delay(80);
+  delay(120);
 
   return response;
 }

@@ -1,12 +1,11 @@
 use std::io::Write;
 
-use anyhow::anyhow;
 use byteorder::WriteBytesExt;
-use bytes::{Buf, BufMut, Bytes, BytesMut};
-use gpio_cdev::{Line, LineHandle, LineRequestFlags};
+use bytes::{BufMut, Bytes, BytesMut};
+use gpio_cdev::{LineHandle, LineRequestFlags};
 use packets::{MasterPacket, SlavePacket};
-use tokio::io::{AsyncReadExt, AsyncWriteExt, ReadHalf};
-use tokio_serial::{SerialPort, SerialPortBuilderExt, SerialStream};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio_serial::{SerialPortBuilderExt, SerialStream};
 
 pub mod packets;
 
