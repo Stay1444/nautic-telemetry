@@ -1,11 +1,10 @@
 #pragma once
 
-#include "FireTimer.h"
-#include "metrics/MetricTask.h"
 #include "radio/Connection.h"
+#include "utils/Task.h"
 #include <Arduino.h>
 
-class Amperimeter : public MetricTask {
+class Amperimeter : public Task {
 public:
   static float read(uint8_t pin, int samples = 100) {
     float volts;
@@ -21,15 +20,13 @@ public:
   Amperimeter(uint8_t pin, uint8_t tag, bool invert) {
     this->m_Pin = pin;
     this->m_Tag = tag;
-    this->m_Timer.begin(1000);
     this->m_Invert = invert;
   }
 
-  void tick(radio::Connection &radio) override;
+  void flush(radio::Connection &radio) override;
 
 private:
   uint8_t m_Pin = 0;
   uint8_t m_Tag = 0;
   bool m_Invert = false;
-  FireTimer m_Timer;
 };

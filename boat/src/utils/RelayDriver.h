@@ -1,16 +1,17 @@
 #pragma once
 
 #include "FireTimer.h"
-#include "metrics/MetricTask.h"
 #include "radio/Connection.h"
+#include "utils/Task.h"
 #include <Arduino.h>
 
-class RelayDriver : public MetricTask {
+class RelayDriver : public Task {
 public:
   RelayDriver(uint8_t relayPin, uint8_t voltimeterPin, float openThreshold,
               float choseThreshold, bool invert);
 
-  void tick(radio::Connection &radio);
+  void tick() override;
+  void flush(radio::Connection &radio) override;
 
 private:
   FireTimer m_Timer;

@@ -4,10 +4,7 @@
 
 float Voltimeter::read(uint8_t pin) { return analogRead(pin) * 25.0 / 1024; }
 
-void Voltimeter::tick(radio::Connection &radio) {
-  if (!this->m_Timer.fire())
-    return;
-
+void Voltimeter::flush(radio::Connection &radio) {
   auto packet = new radio::packets::Slave::Voltage();
 
   packet->tag = this->m_Tag;
@@ -17,5 +14,5 @@ void Voltimeter::tick(radio::Connection &radio) {
     packet->voltage *= -1;
   }
 
-  radio.queue(packet);
+  radio.write(packet);
 }

@@ -2,7 +2,7 @@
 #include "radio/Connection.h"
 #include "radio/packets/Slave.h"
 
-void GPS::tick(radio::Connection &radio) {
+void GPS::flush(radio::Connection &radio) {
   while (this->m_Serial.available()) {
     this->m_Gps.encode(this->m_Serial.read());
   }
@@ -24,7 +24,7 @@ void GPS::tick(radio::Connection &radio) {
     packet->mps = (float)this->m_Gps.speed.mps();
     packet->altitude = this->m_Gps.altitude.meters();
 
-    radio.queue(packet);
+    radio.write(packet);
 
     this->m_Logger.info("GPS sent information");
   }

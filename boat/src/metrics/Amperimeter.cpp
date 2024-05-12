@@ -2,10 +2,7 @@
 #include "radio/Connection.h"
 #include "radio/packets/Slave.h"
 
-void Amperimeter::tick(radio::Connection &radio) {
-  if (!this->m_Timer.fire())
-    return;
-
+void Amperimeter::flush(radio::Connection &radio) {
   auto packet = new radio::packets::Slave::Amperimeter();
 
   packet->tag = this->m_Tag;
@@ -16,5 +13,5 @@ void Amperimeter::tick(radio::Connection &radio) {
 
   packet->value = amps;
 
-  radio.queue(packet);
+  radio.write(packet);
 }

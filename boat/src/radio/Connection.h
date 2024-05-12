@@ -3,7 +3,6 @@
 #include "FireTimer.h"
 #include "Packet.h"
 #include "utils/Allocator.h"
-#include "utils/Vector.h"
 #include <Arduino.h>
 #include <log/Logger.h>
 #include <stdint.h>
@@ -22,23 +21,22 @@ public:
     pinMode(RADIO_MODE_PORT, OUTPUT);
     digitalWrite(RADIO_MODE_PORT, HIGH);
     m_Buffer = (uint8_t *)Allocator::Malloc(BUFFER_SIZE);
-
     m_StatisticsTimer.begin(1000);
   }
   ~Connection() { Allocator::Free(m_Buffer); }
 
   static const size_t BUFFER_SIZE = 256;
-  void queue(Packet *packet, bool optional = true);
+  void write(Packet *packet);
   void handler(PacketCallbackFunction handler);
   void tick();
   String *at(const char *command);
   String *at(String &command);
 
+  bool isSending();
+
 private:
   Packet *recv();
   void handle(Packet *packet);
-  void write(Packet *packet);
-  void flush();
 
   uint8_t *m_Buffer;
   size_t m_BufferLength = 0;
@@ -48,9 +46,8 @@ private:
   uint32_t m_Rx = 0;
   uint8_t m_Channel = 0;
 
+  bool m_InSendWindow = false;
   FireTimer m_StatisticsTimer;
-
-  Vector m_PendingPackets;
 
   PacketCallbackFunction m_Handler;
 };

@@ -17,7 +17,7 @@ RelayDriver::RelayDriver(uint8_t relayPin, uint8_t thermistorPin,
   digitalWrite(relayPin, LOW);
 }
 
-void RelayDriver::tick(radio::Connection &radio) {
+void RelayDriver::tick() {
   if (!this->m_Timer.fire())
     return;
 
@@ -39,3 +39,5 @@ void RelayDriver::tick(radio::Connection &radio) {
       digitalWrite(this->m_RelayPin, HIGH);
   }
 }
+
+void RelayDriver::flush(radio::Connection &radio) {}

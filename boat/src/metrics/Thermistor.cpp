@@ -17,14 +17,11 @@ float Thermistor::celsius(uint8_t pin) {
   return Tc;
 }
 
-void Thermistor::tick(radio::Connection &radio) {
-  if (!this->m_Timer.fire())
-    return;
-
+void Thermistor::flush(radio::Connection &radio) {
   auto packet = new radio::packets::Slave::Temperature();
 
   packet->tag = this->m_Tag;
   packet->temperature = Thermistor::celsius(this->m_Pin);
 
-  radio.queue(packet);
+  radio.write(packet);
 }

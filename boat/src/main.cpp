@@ -2,19 +2,19 @@
 #include "log/Logger.h"
 #include "metrics/Amperimeter.h"
 #include "metrics/GPS.h"
-#include "metrics/MetricTask.h"
 #include "metrics/Thermistor.h"
 #include "metrics/Voltimeter.h"
 #include "radio/Connection.h"
 #include "radio/packets/Master.h"
 #include "radio/packets/Slave.h"
 #include "utils/RelayDriver.h"
+#include "utils/Task.h"
 #include <Arduino.h>
 
 static radio::Connection connection;
 static Logger logger("main");
 
-static MetricTask *tasks[6] = {
+static Task *tasks[6] = {
     new Thermistor(GPIO_THERMISTOR_0, 0),
     new GPS(GPIO_GPS_RX, GPIO_GPS_TX),
     new Amperimeter(GPIO_AMPERIMETER_0, 0, true),
@@ -35,7 +35,12 @@ void loop() {
 
   int tasksLength = sizeof(tasks) / sizeof(tasks[0]);
 
+  bool sending = connection.isSending();
+
   for (int i = 0; i < tasksLength; ++i) {
-    tasks[i]->tick(connection);
+    tasks[i]->tick();
+    if (sending) {
+      tasks[i]->flush(connection);
+    }
   }
 }

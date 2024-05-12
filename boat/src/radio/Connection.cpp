@@ -64,27 +64,6 @@ Packet *Connection::recv() {
   return NULL;
 }
 
-void Connection::queue(Packet *packet, bool optional) {
-  if (this->m_PendingPackets.length() > 8 && optional) {
-    Allocator::Free(packet);
-    return;
-  }
-  this->m_PendingPackets.push((void *)packet);
-}
-
-void Connection::flush() {
-  Packet *packet;
-  size_t count = this->m_PendingPackets.length();
-  while ((packet = (Packet *)this->m_PendingPackets.pop()) != NULL) {
-    this->write(packet);
-  }
-  Serial.print("Written ");
-  Serial.print(count);
-  Serial.println(" packets");
-
-  this->m_PendingPackets.clear(); // Also resets capacity
-}
-
 void Connection::write(Packet *packet) {
   PacketFrame frame = packet->serialize();
   free(packet);
@@ -110,24 +89,18 @@ void Connection::write(Packet *packet) {
 }
 
 void Connection::tick() {
+  if (this->m_InSendWindow) {
+    this->write(new packets::Slave::EndSendWindow());
+    this->m_Logger.info("Send window ended");
+    RADIO_PORT.flush();
+    this->m_InSendWindow = false;
+    return;
+  }
+
   Packet *incoming = NULL;
   while ((incoming = this->recv()) != NULL) {
     handle(incoming);
   }
-
-  if (!this->m_StatisticsTimer.fire())
-    return;
-
-  auto packet = new packets::Slave::RadioReport();
-
-  packet->channel = this->m_Channel;
-  packet->rx = this->m_Rx;
-  packet->tx = this->m_Tx;
-
-  this->m_Rx = 0;
-  this->m_Tx = 0;
-
-  this->queue(packet);
 }
 
 void Connection::handle(Packet *packet) {
@@ -137,10 +110,19 @@ void Connection::handle(Packet *packet) {
   if (packet->id() == MASTER_START_SEND_WINDOW_PACKET) {
     this->m_Logger.info("Send window started");
     Allocator::Free(packet);
-    this->flush();
-    this->write(new packets::Slave::EndSendWindow());
-    this->m_Logger.info("Send window ended");
-    RADIO_PORT.flush();
+    this->m_InSendWindow = true;
+    if (this->m_StatisticsTimer.fire()) {
+      auto packet = new packets::Slave::RadioReport();
+
+      packet->channel = this->m_Channel;
+      packet->rx = this->m_Rx;
+      packet->tx = this->m_Tx;
+
+      this->m_Rx = 0;
+      this->m_Tx = 0;
+
+      this->write(packet);
+    }
     return;
   }
 
@@ -191,3 +173,5 @@ String *Connection::at(const char *command) {
 
   return response;
 }
+
+bool Connection::isSending() { return this->m_InSendWindow; }
