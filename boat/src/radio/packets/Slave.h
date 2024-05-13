@@ -32,9 +32,9 @@ public:
   uint32_t timestamp = millis();
   uint8_t satellites = 0;
   float mps = 0.0;
-  double lat = 0.0;
-  double lon = 0.0;
-  double altitude = 0.0;
+  float lat = 0.0;
+  float lon = 0.0;
+  float altitude = 0.0;
 
   PacketFrame serialize() override {
     PacketFrame frame = {0};

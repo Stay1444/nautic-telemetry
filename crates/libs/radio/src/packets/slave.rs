@@ -8,9 +8,9 @@ pub struct GPS {
     pub timestamp: u32,
     pub satellites: u8,
     pub mps: f32,
-    pub lat: f64,
-    pub lon: f64,
-    pub altitude: f64,
+    pub lat: f32,
+    pub lon: f32,
+    pub altitude: f32,
 }
 
 impl GPS {
@@ -21,9 +21,9 @@ impl GPS {
             timestamp: reader.read_u32::<Endianness>()?,
             satellites: reader.read_u8()?,
             mps: reader.read_f32::<Endianness>()?,
-            lat: reader.read_f64::<Endianness>()?,
-            lon: reader.read_f64::<Endianness>()?,
-            altitude: reader.read_f64::<Endianness>()?,
+            lat: reader.read_f32::<Endianness>()?,
+            lon: reader.read_f32::<Endianness>()?,
+            altitude: reader.read_f32::<Endianness>()?,
         })
     }
 }

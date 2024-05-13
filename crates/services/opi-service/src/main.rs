@@ -6,7 +6,7 @@ use lapin::{
     options::BasicPublishOptions, protocol::basic::AMQPProperties, Channel, ConnectionProperties,
 };
 use radio::packets::{MasterPacket, SlavePacket};
-use telemetry::{DatedTelemetry, Telemetry};
+use telemetry::{DatedTelemetry, SpatialTelemetry, Telemetry};
 use tracing::{error, info};
 
 use crate::tagger::Tagger;
@@ -96,11 +96,11 @@ fn to_telemetry(packet: SlavePacket, tagger: &mut Tagger, _time: u32) -> Option<
     dbg!(&packet);
     let telemetry = match packet {
         SlavePacket::GPS(x) => Some(Telemetry::Spatial(telemetry::SpatialTelemetry {
-            latitude: x.lat,
-            longitude: x.lon,
+            latitude: x.lat as f64,
+            longitude: x.lon as f64,
             velocity: x.mps,
             satellites: x.satellites as i32,
-            altitude: x.altitude,
+            altitude: x.altitude as f64,
         })),
         SlavePacket::Temperature(x) => Some(Telemetry::Environmental(
             telemetry::EnvironmentalTelemetry::Temperature {

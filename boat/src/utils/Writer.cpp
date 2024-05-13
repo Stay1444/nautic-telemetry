@@ -66,11 +66,6 @@ void Writer::write(float value) {
   this->write(uintValue);
 }
 
-void Writer::write(double value) {
-  uint64_t temp = *reinterpret_cast<uint64_t *>(&value);
-  write(temp);
-}
-
 void Writer::write(int32_t value) {
   this->write(
       static_cast<uint32_t>(value)); // Just treat it as an unsigned integer

@@ -13,6 +13,7 @@ public:
   }
 
   void flush(radio::Connection &radio) override;
+  void tick() override;
 
 private:
   SoftwareSerial m_Serial;
