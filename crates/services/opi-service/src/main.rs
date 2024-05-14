@@ -35,7 +35,7 @@ async fn main() -> anyhow::Result<()> {
     queues::telemetry::exchange::declare(&channel).await?;
 
     loop {
-        tokio::time::sleep(Duration::from_secs(1)).await;
+        tokio::time::sleep(Duration::from_millis(500)).await;
         info!("Starting send window");
         radio.write(MasterPacket::StartSendWindow).await?;
 

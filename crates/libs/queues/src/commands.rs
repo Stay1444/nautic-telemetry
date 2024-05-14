@@ -14,7 +14,7 @@ pub fn arguments() -> FieldTable {
 pub mod exchange {
     use lapin::{options::ExchangeDeclareOptions, types::FieldTable, Channel, ExchangeKind};
 
-    pub const NAME: &str = "telemetry-exchange";
+    pub const NAME: &str = "commands-exchange";
     pub const KIND: lapin::ExchangeKind = ExchangeKind::Fanout;
 
     pub fn options() -> ExchangeDeclareOptions {
